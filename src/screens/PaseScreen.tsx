@@ -7,7 +7,7 @@ import {
 } from "../components/Icons";
 
 export function PaseScreen() {
-  const { bookings, showToast, resetFlow } = useApp();
+  const { bookings, showToast, resetFlow, go } = useApp();
   const active = bookings[0];
 
   if (!active) {
@@ -133,7 +133,14 @@ export function PaseScreen() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <button
+          onClick={() => go("rastreo")}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-wine py-3 text-[13px] font-semibold text-cream-50 hover:bg-wine-700"
+        >
+          Ver rastreo en vivo
+        </button>
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <button
             onClick={() => showToast("Pase agregado a Wallet")}
             className="flex items-center justify-center gap-2 rounded-xl border border-cream-50/20 py-3 text-[13px] font-semibold text-cream-50"

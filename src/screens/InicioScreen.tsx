@@ -166,11 +166,11 @@ export function InicioScreen() {
           </div>
 
           {upcoming ? (
-            <button
-              onClick={() => go("pase")}
-              className="mt-2 flex w-full items-stretch justify-between gap-3 rounded-2xl bg-ink p-4 text-left text-cream-50"
-            >
-              <div className="flex-1">
+            <div className="mt-2 flex w-full items-stretch justify-between gap-3 rounded-2xl bg-ink p-4 text-left text-cream-50">
+              <button
+                onClick={() => go("pase")}
+                className="flex-1 text-left"
+              >
                 <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cream-50/60">
                   {upcoming.date} · {upcoming.trip.departure}
                 </div>
@@ -200,11 +200,25 @@ export function InicioScreen() {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="grid h-[72px] w-[72px] shrink-0 place-items-center self-center rounded-lg bg-white p-1.5">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    go("rastreo");
+                  }}
+                  className="mt-3 inline-flex items-center gap-1 rounded-full border border-cream-50/25 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cream-50"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  En vivo
+                </button>
+              </button>
+              <button
+                onClick={() => go("pase")}
+                className="grid h-[72px] w-[72px] shrink-0 place-items-center self-center rounded-lg bg-white p-1.5"
+                aria-label="Ver pase"
+              >
                 <MiniQr />
-              </div>
-            </button>
+              </button>
+            </div>
           ) : (
             <div className="mt-2 rounded-2xl border border-dashed border-ink/20 bg-white/60 p-6 text-center text-[12px] text-ink-muted">
               Aún no tienes viajes reservados. Busca corridas arriba para

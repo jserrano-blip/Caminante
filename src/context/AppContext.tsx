@@ -67,8 +67,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const go = useCallback((next: ScreenKey) => {
     setScreen(next);
     if (next === "inicio") setTabState("inicio");
+    if (next === "horarios" || next === "viajes" || next === "rastreo")
+      setTabState("viajes");
     if (next === "pase") setTabState("pase");
-    if (next === "viajes") setTabState("viajes");
     if (next === "club") setTabState("club");
     if (next === "cuenta") setTabState("cuenta");
   }, []);

@@ -1,4 +1,4 @@
-import type { City, PaymentMethod, Trip } from "./types";
+import type { City, HistoryTrip, PaymentMethod, Stop, Trip } from "./types";
 
 export const cities: City[] = [
   {
@@ -141,6 +141,101 @@ export const popularRoutes = [
   { from: "Toluca", to: "AICM", sub: "Aeropuerto CDMX" },
   { from: "Toluca", to: "Santa Fe", sub: "CDMX" },
   { from: "Toluca", to: "Centro", sub: "CDMX" },
+];
+
+export const historyTrips: HistoryTrip[] = [
+  {
+    id: "h1",
+    monthShort: "ABR",
+    day: "12",
+    route: "Toluca → Santa Fe",
+    confirmation: "CAM-8712",
+    price: 185,
+    status: "completado",
+    invoiced: false,
+  },
+  {
+    id: "h2",
+    monthShort: "ABR",
+    day: "05",
+    route: "AICM T1 → Toluca",
+    confirmation: "CAM-8544",
+    price: 285,
+    status: "completado",
+    invoiced: false,
+  },
+  {
+    id: "h3",
+    monthShort: "MAR",
+    day: "28",
+    route: "Toluca → AIFA",
+    confirmation: "CAM-8401",
+    price: 285,
+    status: "completado",
+    invoiced: true,
+  },
+  {
+    id: "h4",
+    monthShort: "MAR",
+    day: "14",
+    route: "Toluca → Reforma",
+    confirmation: "CAM-8210",
+    price: 195,
+    status: "completado",
+    invoiced: false,
+  },
+  {
+    id: "h5",
+    monthShort: "MAR",
+    day: "02",
+    route: "Toluca → AIFA",
+    confirmation: "CAM-8003",
+    price: 285,
+    status: "cancelado",
+  },
+];
+
+export const liveStops: Stop[] = [
+  { id: "s1", name: "Terminal Tollocan", time: "05:30", status: "done" },
+  { id: "s2", name: "Toluca Centro", time: "05:42", status: "done" },
+  {
+    id: "s3",
+    name: "Lerma",
+    time: "05:58",
+    status: "current",
+    note: "LLEGANDO AHORA · ETA 05:58",
+  },
+  {
+    id: "s4",
+    name: "Santa Fe",
+    time: "06:28",
+    status: "next",
+    note: "Próxima parada",
+  },
+  { id: "s5", name: "Reforma · Ángel", time: "06:45", status: "future" },
+  { id: "s6", name: "AIFA T1", time: "07:15", status: "future" },
+];
+
+export const clubBenefits = [
+  {
+    title: "10% de descuento",
+    sub: "En todas las rutas, siempre",
+  },
+  {
+    title: "Cambio de fecha gratis",
+    sub: "Hasta 2 h antes de la salida",
+  },
+  {
+    title: "Selección de asiento preferente",
+    sub: "Primera fila sin costo",
+  },
+];
+
+export const clubRewards = [
+  { title: "Boleto sencillo", sub: "Rutas CDMX", cost: "500 PTS" },
+  { title: "Upgrade AIFA", sub: "Asiento VIP", cost: "1,200 PTS" },
+  { title: "Acceso lounge", sub: "Terminal Tollocan", cost: "800 PTS" },
+  { title: "Equipaje extra", sub: "+10 kg sin costo", cost: "600 PTS" },
 ];
 
 export const dayLabels = [

@@ -52,6 +52,28 @@ export type ScreenKey =
   | "asiento"
   | "pago"
   | "pase"
+  | "rastreo"
   | "viajes"
   | "club"
   | "cuenta";
+
+export type HistoryStatus = "completado" | "cancelado" | "confirmado";
+
+export type HistoryTrip = {
+  id: string;
+  monthShort: string;
+  day: string;
+  route: string;
+  confirmation: string;
+  price: number;
+  status: HistoryStatus;
+  invoiced?: boolean;
+};
+
+export type Stop = {
+  id: string;
+  name: string;
+  time: string;
+  status: "done" | "current" | "next" | "future";
+  note?: string;
+};

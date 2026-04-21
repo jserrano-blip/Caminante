@@ -6,6 +6,7 @@ import { HorariosScreen } from "./screens/HorariosScreen";
 import { AsientoScreen } from "./screens/AsientoScreen";
 import { PagoScreen } from "./screens/PagoScreen";
 import { PaseScreen } from "./screens/PaseScreen";
+import { RastreoScreen } from "./screens/RastreoScreen";
 import { ViajesScreen } from "./screens/ViajesScreen";
 import { ClubScreen } from "./screens/ClubScreen";
 import { CuentaScreen } from "./screens/CuentaScreen";
@@ -17,9 +18,10 @@ const captions: Record<ScreenKey, { caption: string; title: string; highlight: s
   asiento: { caption: "03 · Selección de asiento", title: "App móvil ·", highlight: "Asiento" },
   pago: { caption: "04 · Pago", title: "App móvil ·", highlight: "Pago" },
   pase: { caption: "05 · Pase de abordar (QR)", title: "App móvil ·", highlight: "Pase de abordar" },
-  viajes: { caption: "06 · Mis viajes", title: "App móvil ·", highlight: "Viajes" },
-  club: { caption: "07 · Club Caminante", title: "App móvil ·", highlight: "Club" },
-  cuenta: { caption: "08 · Mi cuenta", title: "App móvil ·", highlight: "Cuenta" },
+  rastreo: { caption: "06 · Rastreo en vivo", title: "App móvil ·", highlight: "Rastreo en vivo" },
+  viajes: { caption: "07 · Mis viajes / Historial", title: "App móvil ·", highlight: "Historial y facturación" },
+  club: { caption: "08 · Club Caminante", title: "App móvil ·", highlight: "Club Caminante" },
+  cuenta: { caption: "09 · Mi perfil", title: "App móvil ·", highlight: "Cuenta" },
 };
 
 function ActiveScreen() {
@@ -35,6 +37,8 @@ function ActiveScreen() {
       return <PagoScreen />;
     case "pase":
       return <PaseScreen />;
+    case "rastreo":
+      return <RastreoScreen />;
     case "viajes":
       return <ViajesScreen />;
     case "club":
@@ -102,6 +106,10 @@ function FlowRail({ current, tab }: { current: ScreenKey; tab: string }) {
     { key: "asiento", label: "Asiento" },
     { key: "pago", label: "Pago" },
     { key: "pase", label: "Pase QR" },
+    { key: "rastreo", label: "Rastreo" },
+    { key: "viajes", label: "Historial" },
+    { key: "club", label: "Club" },
+    { key: "cuenta", label: "Cuenta" },
   ];
 
   return (
