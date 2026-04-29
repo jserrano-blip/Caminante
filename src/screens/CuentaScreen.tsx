@@ -1,6 +1,14 @@
 import { useApp } from "../context/AppContext";
+import type { ScreenKey } from "../types";
 
 type Row = { key: string; label: string; sub?: string };
+
+type HelpRow = {
+  key: string;
+  label: string;
+  icon: string;
+  target: ScreenKey;
+};
 
 const pasajeroRows: Row[] = [
   { key: "facturacion", label: "Datos de facturación", sub: "RFC · Razón social" },
@@ -18,12 +26,21 @@ const prefsRows: Row[] = [
   { key: "a11y", label: "Accesibilidad", sub: "Texto estándar" },
 ];
 
+const helpRows: HelpRow[] = [
+  { key: "faq", label: "Preguntas frecuentes", icon: "❓", target: "faq" },
+  { key: "terminos", label: "Términos y condiciones", icon: "📄", target: "terminos" },
+  { key: "menores", label: "Política de menores", icon: "🧒", target: "menores" },
+  { key: "wifi", label: "WiFi a bordo", icon: "📶", target: "wifi" },
+  { key: "ahorrando", label: "Viaja Ahorrando", icon: "✈️", target: "ahorrando" },
+  { key: "privacidad", label: "Aviso de privacidad", icon: "🛡️", target: "privacidad" },
+];
+
 const soporteRows: Row[] = [
   { key: "contacto", label: "Atención al cliente", sub: "55 6829 1934" },
 ];
 
 export function CuentaScreen() {
-  const { showToast } = useApp();
+  const { showToast, go } = useApp();
 
   return (
     <div className="flex h-full flex-col">
@@ -63,6 +80,32 @@ export function CuentaScreen() {
 
         <Section title="Pasajero" rows={pasajeroRows} onTap={showToast} />
         <Section title="Preferencias" rows={prefsRows} onTap={showToast} />
+
+        <section className="mt-5">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
+            Información y ayuda
+          </div>
+          <div className="overflow-hidden rounded-2xl bg-white shadow-card">
+            {helpRows.map((r, i) => (
+              <button
+                key={r.key}
+                onClick={() => go(r.target)}
+                className={`flex w-full items-center gap-3 px-4 py-3 text-left ${
+                  i > 0 ? "border-t border-ink/5" : ""
+                }`}
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cream-100 text-[14px]">
+                  {r.icon}
+                </span>
+                <span className="flex-1 text-[13px] font-semibold text-ink">
+                  {r.label}
+                </span>
+                <span className="text-ink-muted">›</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <Section title="Soporte" rows={soporteRows} onTap={showToast} />
 
         <button

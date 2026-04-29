@@ -71,7 +71,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTabState("viajes");
     if (next === "pase") setTabState("pase");
     if (next === "club") setTabState("club");
-    if (next === "cuenta") setTabState("cuenta");
+    if (
+      next === "cuenta" ||
+      next === "faq" ||
+      next === "terminos" ||
+      next === "menores" ||
+      next === "wifi" ||
+      next === "ahorrando" ||
+      next === "privacidad"
+    )
+      setTabState("cuenta");
   }, []);
 
   const setTab = useCallback((next: TabKey) => {

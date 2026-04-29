@@ -55,7 +55,13 @@ export type ScreenKey =
   | "rastreo"
   | "viajes"
   | "club"
-  | "cuenta";
+  | "cuenta"
+  | "faq"
+  | "terminos"
+  | "menores"
+  | "wifi"
+  | "ahorrando"
+  | "privacidad";
 
 export type HistoryStatus = "completado" | "cancelado" | "confirmado";
 
