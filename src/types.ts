@@ -7,6 +7,7 @@ export type City = {
 
 export type Trip = {
   id: string;
+  mode: "bus" | "shuttle";
   origin: City;
   destination: City;
   departure: string; // "05:30"
@@ -47,6 +48,9 @@ export type Booking = {
 export type TabKey = "inicio" | "viajes" | "pase" | "club" | "cuenta";
 
 export type ScreenKey =
+  | "splash"
+  | "onboarding"
+  | "auth"
   | "inicio"
   | "horarios"
   | "asiento"
@@ -61,7 +65,22 @@ export type ScreenKey =
   | "menores"
   | "wifi"
   | "ahorrando"
-  | "privacidad";
+  | "privacidad"
+  | "pass"
+  | "recarga"
+  | "pago_pendiente";
+
+export type ThemeMode = "day" | "night";
+
+export type AppPhase = "splash" | "onboarding" | "auth" | "main";
+
+export type TransportMode = "bus" | "shuttle";
+
+export type User = {
+  name: string;
+  email: string;
+  guest: boolean;
+};
 
 export type HistoryStatus = "completado" | "cancelado" | "confirmado";
 

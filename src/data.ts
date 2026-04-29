@@ -1,6 +1,6 @@
 import type { City, HistoryTrip, PaymentMethod, Stop, Trip } from "./types";
 
-export const cities: City[] = [
+export const busCities: City[] = [
   {
     id: "tlc",
     name: "Toluca",
@@ -25,95 +25,61 @@ export const cities: City[] = [
     terminal: "Terminal Santa Fe",
     short: "SFE",
   },
+  {
+    id: "obs",
+    name: "Observatorio (Terminal Poniente)",
+    terminal: "Av. Río de Tacubaya 200",
+    short: "OBS",
+  },
 ];
 
-export const trips: Trip[] = [
+export const shuttleCities: City[] = [
   {
-    id: "t1",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "05:30",
-    arrival: "07:15",
-    durationMin: 105,
-    stops: 0,
-    busType: "Sprinter",
-    price: 285,
-    seatsLeft: 16,
-    recommended: true,
+    id: "ait",
+    name: "Aeropuerto Toluca AIT",
+    terminal: "San Pedro Totoltepec",
+    short: "AIT",
   },
   {
-    id: "t2",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "07:00",
-    arrival: "08:50",
-    durationMin: 110,
-    stops: 0,
-    busType: "Sprinter",
-    price: 285,
-    seatsLeft: 9,
+    id: "obs5",
+    name: "Observatorio · Puerta 5",
+    terminal: "Terminal Poniente CDMX",
+    short: "OBS",
   },
   {
-    id: "t3",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "09:15",
-    arrival: "11:20",
-    durationMin: 125,
-    stops: 1,
-    busType: "Coach",
-    price: 265,
-    seatsLeft: 22,
-  },
-  {
-    id: "t4",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "11:45",
-    arrival: "13:35",
-    durationMin: 110,
-    stops: 0,
-    busType: "Sprinter",
-    price: 285,
-    seatsLeft: 14,
-  },
-  {
-    id: "t5",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "14:00",
-    arrival: "16:05",
-    durationMin: 125,
-    stops: 1,
-    busType: "Coach",
-    price: 265,
-    seatsLeft: 27,
-  },
-  {
-    id: "t6",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "16:30",
-    arrival: "18:15",
-    durationMin: 105,
-    stops: 0,
-    busType: "Sprinter",
-    price: 285,
-    seatsLeft: 6,
-  },
-  {
-    id: "t7",
-    origin: cities[0],
-    destination: cities[1],
-    departure: "19:00",
-    arrival: "20:55",
-    durationMin: 115,
-    stops: 0,
-    busType: "Sprinter",
-    price: 285,
-    seatsLeft: 11,
+    id: "izcalli",
+    name: "Cuautitlán Izcalli",
+    terminal: "Plaza del Lago",
+    short: "IZC",
   },
 ];
+
+// Mantener export antiguo para compat con imports previos
+export const cities = busCities;
+
+export const busTrips: Trip[] = [
+  { id: "t1", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "05:30", arrival: "07:15", durationMin: 105, stops: 0, busType: "Sprinter", price: 285, seatsLeft: 16, recommended: true },
+  { id: "t2", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "07:00", arrival: "08:50", durationMin: 110, stops: 0, busType: "Sprinter", price: 285, seatsLeft: 9 },
+  { id: "t3", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "09:15", arrival: "11:20", durationMin: 125, stops: 1, busType: "Coach", price: 265, seatsLeft: 22 },
+  { id: "t4", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "11:45", arrival: "13:35", durationMin: 110, stops: 0, busType: "Sprinter", price: 285, seatsLeft: 14 },
+  { id: "t5", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "14:00", arrival: "16:05", durationMin: 125, stops: 1, busType: "Coach", price: 265, seatsLeft: 27 },
+  { id: "t6", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "16:30", arrival: "18:15", durationMin: 105, stops: 0, busType: "Sprinter", price: 285, seatsLeft: 6 },
+  { id: "t7", mode: "bus", origin: busCities[0], destination: busCities[1], departure: "19:00", arrival: "20:55", durationMin: 115, stops: 0, busType: "Sprinter", price: 285, seatsLeft: 11 },
+];
+
+// Shuttle: AIT ↔ Observatorio Puerta 5 ($150) y AIT ↔ Cuautitlán Izcalli (Sprinter 19 pax)
+export const shuttleTrips: Trip[] = [
+  { id: "sh1", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[1], departure: "07:00", arrival: "08:00", durationMin: 60, stops: 0, busType: "Sprinter", price: 150, seatsLeft: 12, recommended: true },
+  { id: "sh2", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[1], departure: "08:40", arrival: "09:40", durationMin: 60, stops: 0, busType: "Sprinter", price: 150, seatsLeft: 8 },
+  { id: "sh3", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[1], departure: "10:40", arrival: "11:40", durationMin: 60, stops: 0, busType: "Sprinter", price: 150, seatsLeft: 19 },
+  { id: "sh4", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[1], departure: "12:40", arrival: "13:40", durationMin: 60, stops: 0, busType: "Sprinter", price: 150, seatsLeft: 4 },
+  { id: "sh5", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[2], departure: "08:30", arrival: "09:50", durationMin: 80, stops: 0, busType: "Sprinter", price: 180, seatsLeft: 10 },
+  { id: "sh6", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[2], departure: "13:30", arrival: "14:50", durationMin: 80, stops: 0, busType: "Sprinter", price: 180, seatsLeft: 6 },
+  { id: "sh7", mode: "shuttle", origin: shuttleCities[0], destination: shuttleCities[2], departure: "17:30", arrival: "18:50", durationMin: 80, stops: 0, busType: "Sprinter", price: 180, seatsLeft: 0 },
+];
+
+// Mantener export antiguo
+export const trips = busTrips;
 
 export const paymentMethods: PaymentMethod[] = [
   {

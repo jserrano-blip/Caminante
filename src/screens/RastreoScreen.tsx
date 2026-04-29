@@ -2,7 +2,7 @@ import { useApp } from "../context/AppContext";
 import { liveStops } from "../data";
 
 export function RastreoScreen() {
-  const { bookings, go, showToast } = useApp();
+  const { bookings, go } = useApp();
   const active = bookings[0];
 
   return (
@@ -82,24 +82,20 @@ export function RastreoScreen() {
         </ol>
 
         <div className="mt-2 flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card">
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-wine/15 font-serif text-[14px] text-wine">
-            RM
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-wine/15 text-[16px]">
+            🚌
           </div>
           <div className="flex-1">
             <div className="text-[9px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
-              Conductor
+              Unidad asignada
             </div>
             <div className="text-[13px] font-semibold text-ink">
-              Rafael M. · 12 años
+              Mercedes Sprinter · Placas MEX CAM 472
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              Wi-Fi a bordo · A/C · Cinturones de seguridad
             </div>
           </div>
-          <button
-            onClick={() => showToast("Llamando al conductor… (demo)")}
-            className="grid h-9 w-9 place-items-center rounded-full border border-ink/10 text-ink"
-            aria-label="Llamar"
-          >
-            <PhoneIcon />
-          </button>
         </div>
 
         {!active && (
@@ -136,19 +132,3 @@ function StopDot({
   return <span className="h-3 w-3 rounded-full border-2 border-ink/25 bg-cream-50" />;
 }
 
-function PhoneIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />
-    </svg>
-  );
-}

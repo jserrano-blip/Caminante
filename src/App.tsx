@@ -1,6 +1,9 @@
 import { AppProvider, useApp } from "./context/AppContext";
 import { PhoneFrame } from "./components/PhoneFrame";
 import { BottomNav } from "./components/BottomNav";
+import { SplashScreen } from "./screens/SplashScreen";
+import { OnboardingScreen } from "./screens/OnboardingScreen";
+import { LoginScreen } from "./screens/LoginScreen";
 import { InicioScreen } from "./screens/InicioScreen";
 import { HorariosScreen } from "./screens/HorariosScreen";
 import { AsientoScreen } from "./screens/AsientoScreen";
@@ -16,25 +19,10 @@ import { MenoresScreen } from "./screens/MenoresScreen";
 import { WifiScreen } from "./screens/WifiScreen";
 import { AhorrandoScreen } from "./screens/AhorrandoScreen";
 import { PrivacidadScreen } from "./screens/PrivacidadScreen";
-import type { ScreenKey } from "./types";
-
-const captions: Record<ScreenKey, { highlight: string; caption: string }> = {
-  inicio: { caption: "01 · Inicio", highlight: "Inicio" },
-  horarios: { caption: "02 · Horarios", highlight: "Horarios" },
-  asiento: { caption: "03 · Selección de asiento", highlight: "Asiento" },
-  pago: { caption: "04 · Pago", highlight: "Pago" },
-  pase: { caption: "05 · Pase de abordar (QR)", highlight: "Pase de abordar" },
-  rastreo: { caption: "06 · Rastreo en vivo", highlight: "Rastreo en vivo" },
-  viajes: { caption: "07 · Mis viajes / Historial", highlight: "Historial y facturación" },
-  club: { caption: "08 · Club Caminante", highlight: "Club Caminante" },
-  cuenta: { caption: "09 · Mi perfil", highlight: "Cuenta" },
-  faq: { caption: "09a · Preguntas frecuentes", highlight: "FAQ" },
-  terminos: { caption: "09b · Términos y condiciones", highlight: "Términos" },
-  menores: { caption: "09c · Política de menores", highlight: "Menores" },
-  wifi: { caption: "09d · WiFi a bordo", highlight: "WiFi" },
-  ahorrando: { caption: "09e · Viaja Ahorrando", highlight: "Viaja Ahorrando" },
-  privacidad: { caption: "09f · Aviso de privacidad", highlight: "Privacidad" },
-};
+import { PassScreen } from "./screens/PassScreen";
+import { RecargaScreen } from "./screens/RecargaScreen";
+import { PagoPendienteScreen } from "./screens/PagoPendienteScreen";
+import type { AppPhase, ScreenKey } from "./types";
 
 const SUB_PROFILE_SCREENS: ScreenKey[] = [
   "faq",
@@ -45,9 +33,20 @@ const SUB_PROFILE_SCREENS: ScreenKey[] = [
   "privacidad",
 ];
 
-function ActiveScreen() {
+const HIDDEN_NAV_SCREENS: ScreenKey[] = [
+  "asiento",
+  "pago",
+  "pago_pendiente",
+  "recarga",
+  ...SUB_PROFILE_SCREENS,
+];
+
+function MainScreen() {
   const { screen } = useApp();
   switch (screen) {
+    case "splash":
+    case "onboarding":
+    case "auth":
     case "inicio":
       return <InicioScreen />;
     case "horarios":
@@ -56,6 +55,8 @@ function ActiveScreen() {
       return <AsientoScreen />;
     case "pago":
       return <PagoScreen />;
+    case "pago_pendiente":
+      return <PagoPendienteScreen />;
     case "pase":
       return <PaseScreen />;
     case "rastreo":
@@ -78,16 +79,25 @@ function ActiveScreen() {
       return <AhorrandoScreen />;
     case "privacidad":
       return <PrivacidadScreen />;
+    case "pass":
+      return <PassScreen />;
+    case "recarga":
+      return <RecargaScreen />;
   }
 }
 
+function ActiveContent() {
+  const { phase } = useApp();
+  if (phase === "splash") return <SplashScreen />;
+  if (phase === "onboarding") return <OnboardingScreen />;
+  if (phase === "auth") return <LoginScreen />;
+  return <MainScreen />;
+}
+
 function ShellBottomNav() {
-  const { screen } = useApp();
-  const hide =
-    screen === "asiento" ||
-    screen === "pago" ||
-    SUB_PROFILE_SCREENS.includes(screen);
-  if (hide) return null;
+  const { screen, phase } = useApp();
+  if (phase !== "main") return null;
+  if (HIDDEN_NAV_SCREENS.includes(screen)) return null;
   return <BottomNav />;
 }
 
@@ -103,12 +113,52 @@ function Toast() {
   );
 }
 
+function captionFor(phase: AppPhase, screen: ScreenKey): {
+  caption: string;
+  highlight: string;
+} {
+  if (phase === "splash") return { caption: "00 · Splash", highlight: "Splash" };
+  if (phase === "onboarding")
+    return { caption: "00 · Onboarding", highlight: "Onboarding" };
+  if (phase === "auth")
+    return { caption: "00 · Iniciar sesión", highlight: "Login" };
+
+  const map: Record<ScreenKey, { caption: string; highlight: string }> = {
+    splash: { caption: "00 · Splash", highlight: "Splash" },
+    onboarding: { caption: "00 · Onboarding", highlight: "Onboarding" },
+    auth: { caption: "00 · Login", highlight: "Login" },
+    inicio: { caption: "01 · Inicio", highlight: "Inicio" },
+    horarios: { caption: "02 · Horarios", highlight: "Horarios" },
+    asiento: { caption: "03 · Asiento", highlight: "Asiento" },
+    pago: { caption: "04 · Pago", highlight: "Pago" },
+    pago_pendiente: { caption: "04b · Pago pendiente", highlight: "Pendiente" },
+    pase: { caption: "05 · Pase de abordar", highlight: "Pase" },
+    rastreo: { caption: "06 · Rastreo en vivo", highlight: "Rastreo" },
+    viajes: { caption: "07 · Mis viajes", highlight: "Historial" },
+    club: { caption: "08 · Club Caminante", highlight: "Club" },
+    cuenta: { caption: "09 · Mi perfil", highlight: "Cuenta" },
+    faq: { caption: "09a · FAQ", highlight: "FAQ" },
+    terminos: { caption: "09b · Términos", highlight: "Términos" },
+    menores: { caption: "09c · Menores", highlight: "Menores" },
+    wifi: { caption: "09d · WiFi", highlight: "WiFi" },
+    ahorrando: { caption: "09e · Viaja Ahorrando", highlight: "Ahorrando" },
+    privacidad: { caption: "09f · Privacidad", highlight: "Privacidad" },
+    pass: { caption: "10 · Caminante Pass", highlight: "Pass" },
+    recarga: { caption: "10a · Recarga", highlight: "Recarga" },
+  };
+  return map[screen];
+}
+
 function Stage() {
-  const { screen, tab } = useApp();
-  const meta = captions[screen];
+  const { screen, tab, phase, theme } = useApp();
+  const meta = captionFor(phase, screen);
 
   return (
-    <div className="flex min-h-screen flex-col bg-cream-100 text-ink">
+    <div
+      className={`flex min-h-screen flex-col text-ink ${
+        theme === "night" ? "bg-ink" : "bg-cream-100"
+      }`}
+    >
       <header className="flex items-center justify-between px-10 pt-8">
         <div className="text-[10px] font-semibold uppercase tracking-[0.32em] text-ink-muted">
           Caminante · prototipo interactivo
@@ -122,29 +172,39 @@ function Stage() {
       <div className="flex flex-1 items-center justify-center p-6">
         <PhoneFrame caption={meta.caption}>
           <div className="relative flex h-full flex-col">
-            <ActiveScreen />
+            <ActiveContent />
             <Toast />
             <ShellBottomNav />
           </div>
         </PhoneFrame>
       </div>
 
-      <FlowRail current={screen} tab={tab} />
+      <FlowRail current={phase === "main" ? screen : (phase as ScreenKey)} tab={tab} />
     </div>
   );
 }
 
 function FlowRail({ current, tab }: { current: ScreenKey; tab: string }) {
-  const { go } = useApp();
+  const { go, setPhase, theme, toggleTheme } = useApp();
+
+  const onboard: { key: ScreenKey | AppPhase; label: string }[] = [
+    { key: "splash" as AppPhase, label: "Splash" },
+    { key: "onboarding" as AppPhase, label: "Onboarding" },
+    { key: "auth" as AppPhase, label: "Login" },
+  ];
+
   const steps: { key: ScreenKey; label: string }[] = [
     { key: "inicio", label: "Inicio" },
     { key: "horarios", label: "Horarios" },
     { key: "asiento", label: "Asiento" },
     { key: "pago", label: "Pago" },
+    { key: "pago_pendiente", label: "Pendiente" },
     { key: "pase", label: "Pase QR" },
     { key: "rastreo", label: "Rastreo" },
     { key: "viajes", label: "Historial" },
     { key: "club", label: "Club" },
+    { key: "pass", label: "Pass" },
+    { key: "recarga", label: "Recarga" },
     { key: "cuenta", label: "Cuenta" },
   ];
 
@@ -157,9 +217,46 @@ function FlowRail({ current, tab }: { current: ScreenKey; tab: string }) {
     { key: "privacidad", label: "Privacidad" },
   ];
 
+  const goPhaseOrScreen = (key: string) => {
+    if (key === "splash" || key === "onboarding" || key === "auth") {
+      setPhase(key);
+      return;
+    }
+    setPhase("main");
+    go(key as ScreenKey);
+  };
+
   return (
     <footer className="sticky bottom-0 z-10 border-t border-ink/10 bg-cream-50/90 px-6 py-3 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2">
+      <div className="mx-auto flex max-w-6xl flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-ink-muted">
+            Onboarding
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {onboard.map((s) => {
+              const active = current === s.key;
+              return (
+                <button
+                  key={s.key as string}
+                  onClick={() => goPhaseOrScreen(s.key as string)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                    active ? "bg-ink text-cream-50" : "bg-white text-ink"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={toggleTheme}
+            className="ml-auto rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] font-semibold text-ink"
+          >
+            {theme === "day" ? "🌙 Modo nocturno" : "☀️ Modo diurno"}
+          </button>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-ink-muted">
             Flujo de reserva
@@ -170,7 +267,7 @@ function FlowRail({ current, tab }: { current: ScreenKey; tab: string }) {
               return (
                 <button
                   key={s.key}
-                  onClick={() => go(s.key)}
+                  onClick={() => goPhaseOrScreen(s.key)}
                   className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
                     active
                       ? "bg-wine text-cream-50"
@@ -183,9 +280,10 @@ function FlowRail({ current, tab }: { current: ScreenKey; tab: string }) {
             })}
           </div>
           <div className="text-[10px] text-ink-muted">
-            Tab activa: <span className="font-semibold text-ink">{tab}</span>
+            Tab: <span className="font-semibold text-ink">{tab}</span>
           </div>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-ink-muted">
             Mi Perfil · Información y ayuda
@@ -196,7 +294,7 @@ function FlowRail({ current, tab }: { current: ScreenKey; tab: string }) {
               return (
                 <button
                   key={s.key}
-                  onClick={() => go(s.key)}
+                  onClick={() => goPhaseOrScreen(s.key)}
                   className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
                     active
                       ? "bg-ink text-cream-50"

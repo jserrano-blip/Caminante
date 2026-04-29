@@ -1,14 +1,19 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { dayLabels, trips } from "../data";
+import { busTrips, dayLabels, shuttleTrips } from "../data";
 import { ArrowRight, ChevronLeft } from "../components/Icons";
 
 export function HorariosScreen() {
-  const { search, setSearch, selectTrip, go } = useApp();
-  const [order, setOrder] = useState<"salida" | "precio" | "duracion">("salida");
+  const { search, setSearch, selectTrip, go, transportMode, showToast } =
+    useApp();
+  const [order, setOrder] = useState<"salida" | "precio" | "duracion">(
+    "salida",
+  );
+
+  const sourceTrips = transportMode === "shuttle" ? shuttleTrips : busTrips;
 
   const filtered = useMemo(() => {
-    const list = trips.filter(
+    const list = sourceTrips.filter(
       (t) =>
         t.origin.id === search.origin.id &&
         t.destination.id === search.destination.id,
@@ -17,7 +22,11 @@ export function HorariosScreen() {
     if (order === "duracion")
       return [...list].sort((a, b) => a.durationMin - b.durationMin);
     return list;
-  }, [order, search.origin.id, search.destination.id]);
+  }, [order, search.origin.id, search.destination.id, sourceTrips]);
+
+  // Estado especial: shuttle sin asientos en una corrida específica → aviso
+  const shuttleSoldOut =
+    transportMode === "shuttle" && filtered.every((t) => t.seatsLeft === 0) && filtered.length > 0;
 
   const selectedDay = dayLabels.find((d) => d.key === search.dayKey) ?? dayLabels[0];
 
@@ -94,6 +103,30 @@ export function HorariosScreen() {
       </div>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto px-5 pb-28">
+        {transportMode === "shuttle" && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[11px] text-amber-900">
+            <span className="font-semibold">Servicio Shuttle ·</span> Sprinter
+            de 19 pasajeros. Solo aplican rutas AIT ↔ Observatorio y AIT ↔
+            Cuautitlán Izcalli.
+          </div>
+        )}
+        {shuttleSoldOut && (
+          <div className="rounded-xl border border-wine/30 bg-wine/5 p-3 text-[11px] text-wine-700">
+            <span className="font-semibold">Sin asientos disponibles</span> en
+            esta corrida shuttle. Considera{" "}
+            <button
+              onClick={() => {
+                showToast("Cambiando a Camión");
+                setSearch({});
+                go("inicio");
+              }}
+              className="underline font-semibold"
+            >
+              Viaje en Camión
+            </button>{" "}
+            como alternativa.
+          </div>
+        )}
         {filtered.map((t) => (
           <article
             key={t.id}
@@ -147,12 +180,22 @@ export function HorariosScreen() {
               </span>
               <button
                 onClick={() => {
+                  if (t.seatsLeft === 0) {
+                    showToast("Sin asientos · prueba otra corrida");
+                    return;
+                  }
                   selectTrip(t);
                   go("asiento");
                 }}
-                className="flex items-center gap-1 font-semibold text-wine"
+                disabled={t.seatsLeft === 0}
+                className={`flex items-center gap-1 font-semibold ${
+                  t.seatsLeft === 0
+                    ? "text-ink-muted"
+                    : "text-wine"
+                }`}
               >
-                Seleccionar asiento <ArrowRight className="h-3.5 w-3.5" />
+                {t.seatsLeft === 0 ? "Lleno" : "Seleccionar asiento"}{" "}
+                {t.seatsLeft > 0 && <ArrowRight className="h-3.5 w-3.5" />}
               </button>
             </div>
           </article>

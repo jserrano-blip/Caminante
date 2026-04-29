@@ -21,6 +21,9 @@ body {
   color: #1a1715;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 250ms ease,
+    color 250ms ease;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -29,4 +32,120 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/*
+ * NIGHT THEME — paleta independiente, no es inversión.
+ * Fondo cálido oscuro, superficies elevadas con calidez, vino mantenido,
+ * dorado conservado para acentos premium.
+ */
+.theme-night body {
+  background: #0e0c0a;
+  color: #f2ebdc;
+  color-scheme: dark;
+}
+
+/* Scoped overrides — sólo afectan al frame del prototipo cuando lleva la clase .theme-night */
+.theme-night .bg-cream-50 {
+  background-color: #1a1714 !important;
+}
+.theme-night .bg-cream-100 {
+  background-color: #0e0c0a !important;
+}
+.theme-night .bg-cream-200 {
+  background-color: #231f1b !important;
+}
+.theme-night .bg-cream-50\/5 {
+  background-color: rgba(245, 239, 230, 0.05) !important;
+}
+.theme-night .bg-cream-50\/10 {
+  background-color: rgba(245, 239, 230, 0.1) !important;
+}
+.theme-night .bg-white {
+  background-color: #1f1b17 !important;
+}
+.theme-night .bg-white\/60 {
+  background-color: rgba(31, 27, 23, 0.6) !important;
+}
+
+.theme-night .bg-cream-50\/95,
+.theme-night .bg-cream-50\/90,
+.theme-night .bg-cream-50\/80 {
+  background-color: rgba(26, 23, 20, 0.92) !important;
+}
+
+.theme-night .text-ink {
+  color: #f2ebdc !important;
+}
+.theme-night .text-ink-soft {
+  color: #d8cfbe !important;
+}
+.theme-night .text-ink-muted {
+  color: #9d958c !important;
+}
+
+.theme-night .border-ink\/5 {
+  border-color: rgba(245, 239, 230, 0.06) !important;
+}
+.theme-night .border-ink\/10 {
+  border-color: rgba(245, 239, 230, 0.1) !important;
+}
+.theme-night .border-ink\/15 {
+  border-color: rgba(245, 239, 230, 0.14) !important;
+}
+.theme-night .border-ink\/20 {
+  border-color: rgba(245, 239, 230, 0.18) !important;
+}
+.theme-night .border-ink\/25 {
+  border-color: rgba(245, 239, 230, 0.22) !important;
+}
+.theme-night .border-ink\/30 {
+  border-color: rgba(245, 239, 230, 0.26) !important;
+}
+
+.theme-night .divide-ink\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(245, 239, 230, 0.06) !important;
+}
+
+.theme-night .shadow-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* En modo noche, mantenemos algunos bg-ink "nativos" oscuros pero con surface elevada */
+.theme-night .bg-ink {
+  background-color: #060504 !important;
+}
+.theme-night .text-cream-50 {
+  color: #f2ebdc !important;
+}
+.theme-night .text-cream-50\/60 {
+  color: rgba(242, 235, 220, 0.6) !important;
+}
+.theme-night .text-cream-50\/70 {
+  color: rgba(242, 235, 220, 0.7) !important;
+}
+
+/* Acentos vino: en noche subimos un poco la luz del wine para AA */
+.theme-night .text-wine {
+  color: #c9536a !important;
+}
+.theme-night .bg-wine {
+  background-color: #8d2638 !important;
+}
+.theme-night .bg-wine\/10 {
+  background-color: rgba(201, 83, 106, 0.18) !important;
+}
+.theme-night .bg-wine\/15 {
+  background-color: rgba(201, 83, 106, 0.22) !important;
+}
+.theme-night .border-wine {
+  border-color: #c9536a !important;
+}
+.theme-night .border-wine\/30 {
+  border-color: rgba(201, 83, 106, 0.4) !important;
+}
+
+/* Bordes específicos */
+.theme-night .border-dashed {
+  border-color: rgba(245, 239, 230, 0.18) !important;
 }

@@ -1,5 +1,5 @@
 import { useApp } from "../context/AppContext";
-import { popularRoutes, cities, dayLabels } from "../data";
+import { popularRoutes, busCities, shuttleCities, dayLabels } from "../data";
 import {
   ArrowRight,
   BellIcon,
@@ -8,11 +8,33 @@ import {
   SwapIcon,
 } from "../components/Icons";
 
-export function InicioScreen() {
-  const { search, setSearch, swapCities, go, bookings, showToast } = useApp();
-  const upcoming = bookings[0];
+function dynamicGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Buenos días";
+  if (h < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
 
-  const selectedDay = dayLabels.find((d) => d.key === search.dayKey) ?? dayLabels[0];
+export function InicioScreen() {
+  const {
+    search,
+    setSearch,
+    swapCities,
+    go,
+    bookings,
+    showToast,
+    user,
+    theme,
+    toggleTheme,
+    transportMode,
+    setTransportMode,
+    passBalance,
+  } = useApp();
+  const upcoming = bookings[0];
+  const cities = transportMode === "shuttle" ? shuttleCities : busCities;
+  const selectedDay =
+    dayLabels.find((d) => d.key === search.dayKey) ?? dayLabels[0];
+  const firstName = (user?.name ?? "Mariana").split(" ")[0];
 
   return (
     <div className="flex h-full flex-col">
@@ -20,24 +42,82 @@ export function InicioScreen() {
         <div className="flex items-start justify-between pt-3">
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-muted">
-              Buenos días
+              {dynamicGreeting()}
             </div>
             <h1 className="font-serif text-[28px] leading-[1.05] text-ink">
-              Hola,
-              <br />
-              Mariana
+              {user?.guest ? (
+                <>Bienvenido</>
+              ) : (
+                <>
+                  Hola,
+                  <br />
+                  {firstName}
+                </>
+              )}
             </h1>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="grid h-10 w-10 place-items-center rounded-full border border-ink/10 bg-white text-ink"
+              aria-label="Cambiar modo"
+              title={theme === "day" ? "Modo nocturno" : "Modo diurno"}
+            >
+              {theme === "day" ? "🌙" : "☀️"}
+            </button>
+            <button
+              onClick={() => showToast("No tienes notificaciones nuevas")}
+              className="grid h-10 w-10 place-items-center rounded-full border border-ink/10 bg-white text-ink"
+              aria-label="Notificaciones"
+            >
+              <BellIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Selector de modo de transporte (Camión vs Shuttle) */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
           <button
-            onClick={() => showToast("No tienes notificaciones nuevas")}
-            className="grid h-10 w-10 place-items-center rounded-full border border-ink/10 bg-white text-ink"
-            aria-label="Notificaciones"
+            onClick={() => setTransportMode("bus")}
+            className={`relative overflow-hidden rounded-2xl border p-3 text-left transition ${
+              transportMode === "bus"
+                ? "border-wine bg-white shadow-card"
+                : "border-ink/10 bg-cream-50"
+            }`}
           >
-            <BellIcon className="h-5 w-5" />
+            <div className="text-[16px]">🚌</div>
+            <div className="mt-1 text-[13px] font-semibold text-ink">
+              Viaje en Camión
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              Red masiva Caminante
+            </div>
+            {transportMode === "bus" && (
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-wine" />
+            )}
+          </button>
+          <button
+            onClick={() => setTransportMode("shuttle")}
+            className={`relative overflow-hidden rounded-2xl border p-3 text-left transition ${
+              transportMode === "shuttle"
+                ? "border-wine bg-white shadow-card"
+                : "border-ink/10 bg-cream-50"
+            }`}
+          >
+            <div className="text-[16px]">🚐</div>
+            <div className="mt-1 text-[13px] font-semibold text-ink">
+              Viaje en Shuttle
+            </div>
+            <div className="text-[10px] text-ink-muted">
+              Sprinter 19 pasajeros
+            </div>
+            {transportMode === "shuttle" && (
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-wine" />
+            )}
           </button>
         </div>
 
-        <section className="mt-5 rounded-2xl bg-white p-4 shadow-card">
+        <section className="mt-3 rounded-2xl bg-white p-4 shadow-card">
           <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
             ¿A dónde vas?
           </div>
@@ -141,18 +221,66 @@ export function InicioScreen() {
 
           <button
             onClick={() => go("horarios")}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-wine py-3 text-[14px] font-semibold text-cream-50 transition hover:bg-wine-700 active:scale-[0.99]"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-wine py-3 text-[14px] font-semibold text-cream-50 hover:bg-wine-700"
           >
             Buscar corridas <ArrowRight className="h-4 w-4" />
           </button>
           <div className="mt-2 text-center text-[11px] text-ink-muted">
-            {selectedDay.label === "HOY" ? "Hoy" : selectedDay.label.charAt(0) + selectedDay.label.slice(1).toLowerCase()}{" "}
-            · {selectedDay.num} {selectedDay.month} · {search.passengers} pasajero
-            {search.passengers > 1 ? "s" : ""}
+            {transportMode === "shuttle" ? "Shuttle · Sprinter" : "Camión · Primera clase"} ·{" "}
+            {selectedDay.label === "HOY"
+              ? "Hoy"
+              : selectedDay.label.charAt(0) +
+                selectedDay.label.slice(1).toLowerCase()}{" "}
+            · {selectedDay.num} {selectedDay.month}
           </div>
         </section>
 
-        <section className="mt-6">
+        {/* Caminante Pass */}
+        <section className="mt-5">
+          <div className="flex items-baseline justify-between">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
+              Caminante Pass
+            </div>
+            <button
+              onClick={() => go("pass")}
+              className="text-[11px] font-semibold text-wine"
+            >
+              Ver tarjeta
+            </button>
+          </div>
+          <button
+            onClick={() => go("pass")}
+            className="mt-2 flex w-full items-stretch justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-ink to-wine-800 p-4 text-left text-cream-50 shadow-card"
+          >
+            <div>
+              <div className="text-[9px] font-semibold uppercase tracking-[0.22em] text-cream-50/60">
+                Saldo
+              </div>
+              <div className="font-serif text-[24px] leading-none">
+                ${passBalance.toFixed(2)}
+              </div>
+              <div className="mt-1 text-[10px] text-cream-50/70">
+                MXN · sin caducidad
+              </div>
+            </div>
+            <div className="flex flex-col items-end justify-between">
+              <div className="text-[9px] font-mono tracking-widest text-cream-50/60">
+                •••• 2381
+              </div>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go("recarga");
+                }}
+                className="rounded-full bg-cream-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink"
+              >
+                Recargar
+              </span>
+            </div>
+          </button>
+        </section>
+
+        <section className="mt-5">
           <div className="flex items-baseline justify-between">
             <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-muted">
               Próximo viaje
@@ -237,8 +365,7 @@ export function InicioScreen() {
                 key={r.to}
                 onClick={() => {
                   showToast(`Mostrando corridas ${r.from} → ${r.to}`);
-                  const dest = cities.find((c) => c.short === r.to.replace(/^.*?(\w+)$/, "$1")) ?? cities[1];
-                  setSearch({ destination: dest });
+                  setTransportMode("bus");
                   go("horarios");
                 }}
                 className="flex w-[120px] shrink-0 flex-col gap-3 rounded-2xl bg-white p-3 text-left shadow-card"
@@ -271,11 +398,10 @@ function MiniQr() {
         const x = i % 21;
         const y = Math.floor(i / 21);
         const hash = (x * 31 + y * 17 + x * y) % 7;
-        const on = hash < 3 || (x < 3 && y < 3) || (x > 17 && y < 3) || (x < 3 && y > 17);
+        const on =
+          hash < 3 || (x < 3 && y < 3) || (x > 17 && y < 3) || (x < 3 && y > 17);
         if (!on) return null;
-        return (
-          <rect key={i} x={x} y={y} width="1" height="1" fill="currentColor" />
-        );
+        return <rect key={i} x={x} y={y} width="1" height="1" fill="currentColor" />;
       })}
     </svg>
   );
