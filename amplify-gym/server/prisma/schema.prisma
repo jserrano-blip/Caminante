@@ -1,0 +1,204 @@
+// Amplify Gym — Esquema de base de datos relacional
+// SQLite en desarrollo; para producción en Render cambia provider a "postgresql"
+// y define DATABASE_URL en las variables de entorno.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── 1. Sistema multiusuario privado ─────────────────────────────────────────
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  avatarColor String   @default("#2563EB") // acento dentro de la paleta azul
+  weightUnit  String   @default("KG") // preferencia de visualización: KG | LB
+  sex         String   @default("M") // M | F — necesario para Wilks/DOTS
+  createdAt   DateTime @default(now())
+
+  gyms       Gym[]
+  exercises  Exercise[]
+  routines   Routine[]
+  sessions   WorkoutSession[]
+  metrics    BodyMetric[]
+  recovery   RecoveryLog[]
+  mealPreps  MealPrep[]
+  records    PersonalRecord[]
+}
+
+// ── 2. Gestión multigimnasio + inventario de equipo ─────────────────────────
+model Gym {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  equipment EquipmentItem[]
+  sessions  WorkoutSession[]
+}
+
+// type: BARBELL (weightKg = peso de la barra)
+//       PLATE   (weightKg = peso del disco, count = pares disponibles)
+//       DUMBBELL(weightKg = peso de una mancuerna; una fila por peso disponible)
+//       MACHINE (name = nombre de la máquina, stackStepKg = incremento de placa)
+model EquipmentItem {
+  id          String  @id @default(cuid())
+  gymId       String
+  type        String // BARBELL | PLATE | DUMBBELL | MACHINE
+  name        String?
+  weightKg    Float?
+  count       Int?
+  stackStepKg Float?
+  stackMaxKg  Float?
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+}
+
+// ── 3. Catálogo de ejercicios con variantes ──────────────────────────────────
+model Exercise {
+  id          String  @id @default(cuid())
+  userId      String? // null = ejercicio del catálogo global (seed)
+  name        String
+  muscleGroup String // PECHO | ESPALDA | PIERNA | HOMBRO | BRAZO | CORE | OTRO
+  category    String // BARBELL | DUMBBELL | MACHINE | CABLE | BODYWEIGHT
+  variantOfId String? // self-relation: Incline Bench Press -> Bench Press
+  notes       String?
+  isPowerlift Boolean @default(false) // cuenta para Wilks/DOTS (SBD)
+
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variantOf  Exercise?        @relation("Variants", fields: [variantOfId], references: [id])
+  variants   Exercise[]       @relation("Variants")
+  routineExs RoutineExercise[]
+  sets       WorkoutSet[]
+  records    PersonalRecord[]
+}
+
+// ── Plantillas de rutina ─────────────────────────────────────────────────────
+model Routine {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
+  sessions  WorkoutSession[]
+}
+
+model RoutineExercise {
+  id          String @id @default(cuid())
+  routineId   String
+  exerciseId  String
+  order       Int
+  targetSets  Int    @default(3)
+  targetReps  String @default("8-12") // rango de reps, ej. "5", "8-12"
+  targetRpe   Float?
+  restSeconds Int    @default(120)
+
+  routine  Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+// ── Sesiones de entrenamiento y series ───────────────────────────────────────
+model WorkoutSession {
+  id         String    @id @default(cuid())
+  userId     String
+  gymId      String?
+  routineId  String?
+  name       String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  notes      String?
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym     Gym?             @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  routine Routine?         @relation(fields: [routineId], references: [id], onDelete: SetNull)
+  sets    WorkoutSet[]
+  records PersonalRecord[]
+}
+
+// El peso SIEMPRE se guarda en kg (weightKg); `unit` solo registra cómo lo
+// capturó el usuario para mostrarlo igual al editar.
+model WorkoutSet {
+  id          String   @id @default(cuid())
+  sessionId   String
+  exerciseId  String
+  setNumber   Int
+  reps        Int
+  weightKg    Float
+  unit        String   @default("KG") // KG | LB
+  rpe         Float? // 1-10 (admite .5)
+  rir         Int? // Reps in Reserve
+  isWarmup    Boolean  @default(false)
+  completedAt DateTime @default(now())
+
+  session  WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+// ── 5. Récords personales (detección automática al finalizar sesión) ────────
+model PersonalRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  exerciseId String
+  sessionId  String?
+  type       String // WEIGHT | E1RM | VOLUME | REPS
+  value      Float // kg para WEIGHT/E1RM, kg totales para VOLUME, reps para REPS
+  reps       Int?
+  date       DateTime @default(now())
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  session  WorkoutSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+}
+
+// ── 6. Métricas corporales ───────────────────────────────────────────────────
+model BodyMetric {
+  id         String   @id @default(cuid())
+  userId     String
+  date       DateTime @default(now())
+  weightKg   Float
+  heightCm   Float?
+  bodyFatPct Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── 7a. Recuperación diaria ──────────────────────────────────────────────────
+model RecoveryLog {
+  id         String   @id @default(cuid())
+  userId     String
+  date       DateTime @default(now())
+  sleepHours Float
+  soreness   Int // dolor muscular 1-10
+  fatigue    Int // fatiga general 1-10
+  notes      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── 7b. Módulo Meal Prep ─────────────────────────────────────────────────────
+// userId null = plantilla global (seed: pollo, arroz, lentejas, avena con
+// tiempos de olla de presión digital).
+model MealPrep {
+  id            String  @id @default(cuid())
+  userId        String?
+  name          String
+  servings      Int     @default(1)
+  proteinG      Float
+  carbsG        Float
+  fatG          Float
+  calories      Float
+  cookMinutes   Int?
+  applianceNote String? // ej. "Olla de presión digital: 10 min alta presión + 5 NPR"
+  instructions  String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
