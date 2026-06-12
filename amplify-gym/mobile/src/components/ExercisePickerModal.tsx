@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.subtitle, fontSize: 20, marginBottom: spacing.sm },
   search: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    borderBottomColor: colors.ice,
   },
   name: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
   meta: { fontSize: 12, color: colors.textMuted, marginTop: 1 },

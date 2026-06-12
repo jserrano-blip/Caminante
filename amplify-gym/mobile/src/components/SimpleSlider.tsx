@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   track: {
     height: 6,
     borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
   },

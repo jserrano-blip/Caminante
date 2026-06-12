@@ -16,7 +16,12 @@ export type MainTabsParamList = {
 export type EntrenarStackParamList = {
   StartWorkout: undefined;
   LiveWorkout: { sessionId: string; sessionName: string; routine?: Routine };
-  WorkoutSummary: { summary: FinishSummary; sessionName: string };
+  /**
+   * Modo celebración: llega con `summary` recién calculado por el servidor.
+   * Modo lectura (historial): llega solo con `sessionId` y carga la sesión.
+   */
+  WorkoutSummary: { summary?: FinishSummary; sessionName?: string; sessionId?: string };
+  History: undefined;
 };
 
 export type RutinasStackParamList = {

@@ -15,7 +15,7 @@ import { useApp } from '../context/AppContext';
 import { formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/formulas';
 import { errorMessage, useLoad } from '../lib/useLoad';
 import type { CuerpoStackParamList } from '../navigation/types';
-import { colors, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<CuerpoStackParamList, 'Body'>;
 
@@ -187,7 +187,7 @@ export function BodyScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   headerLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerLinkText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
@@ -208,10 +208,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    borderBottomColor: colors.ice,
     alignItems: 'center',
   },
   td: { flex: 1, fontSize: 13, color: colors.textPrimary },
-  totalRow: { backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 4 },
+  totalRow: { backgroundColor: colors.ice, borderRadius: 8, paddingHorizontal: 4 },
   bw: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm },
 });

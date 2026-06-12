@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +10,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { SimpleSlider } from '../components/SimpleSlider';
 import { useApp } from '../context/AppContext';
 import { errorMessage, useLoad } from '../lib/useLoad';
-import { colors, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, spacing, typography } from '../theme';
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -79,9 +80,15 @@ export function RecoveryScreen() {
               <View key={log.id} style={styles.logRow}>
                 <Text style={styles.logDate}>{fmtDate(log.date)}</Text>
                 <View style={styles.logStats}>
-                  <Text style={styles.logStat}>😴 {log.sleepHours} h</Text>
-                  <Text style={styles.logStat}>💪 dolor {log.soreness}</Text>
-                  <Text style={styles.logStat}>🔋 fatiga {log.fatigue}</Text>
+                  <Text style={styles.logStat}>
+                    <Ionicons name="moon-outline" size={12} color={colors.textMuted} /> {log.sleepHours} h
+                  </Text>
+                  <Text style={styles.logStat}>
+                    <Ionicons name="fitness-outline" size={12} color={colors.textMuted} /> dolor {log.soreness}
+                  </Text>
+                  <Text style={styles.logStat}>
+                    <Ionicons name="battery-half-outline" size={12} color={colors.textMuted} /> fatiga {log.fatigue}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -94,7 +101,7 @@ export function RecoveryScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle, marginBottom: spacing.sm },
   formError: { color: colors.primaryDark, fontSize: 13, fontWeight: '600', marginTop: 4 },
@@ -104,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    borderBottomColor: colors.ice,
   },
   logDate: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, textTransform: 'capitalize' },
   logStats: { flexDirection: 'row', gap: spacing.sm },

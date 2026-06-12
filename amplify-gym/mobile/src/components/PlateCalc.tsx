@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   field: { flex: 1 },
   fieldLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4 },
   resultBox: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

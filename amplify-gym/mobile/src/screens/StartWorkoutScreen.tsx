@@ -14,7 +14,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
 import { errorMessage, useLoad } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<EntrenarStackParamList, 'StartWorkout'>;
 
@@ -57,7 +57,18 @@ export function StartWorkoutScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ScreenHeader title="Entrenar" subtitle="Elige una rutina o empieza en vacío" />
+        <ScreenHeader
+          title="Entrenar"
+          subtitle="Elige una rutina o empieza en vacío"
+          right={
+            <Pressable onPress={() => navigation.navigate('History')} hitSlop={8}>
+              <View style={styles.headerLink}>
+                <Ionicons name="time-outline" size={18} color={colors.primary} />
+                <Text style={styles.headerLinkText}>Historial</Text>
+              </View>
+            </Pressable>
+          }
+        />
 
         {startError ? <ErrorBanner message={startError} /> : null}
         {routines.error ? <ErrorBanner message={routines.error} onRetry={routines.reload} /> : null}
@@ -123,9 +134,11 @@ export function StartWorkoutScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
+  headerLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerLinkText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   gymHint: { ...typography.muted, marginTop: 2, marginBottom: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   emptyWorkout: {

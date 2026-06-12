@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, shadow, spacing } from '../theme';
@@ -46,12 +47,17 @@ export function RestTimer({ seconds, onDone, onDismiss }: Props) {
   const finished = remaining <= 0;
 
   return (
-    <View style={[styles.container, finished && styles.finished]}>
+    <LinearGradient
+      colors={finished ? [colors.navy900, colors.navy700] : [colors.navy800, colors.primary]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       <Pressable onPress={() => setRemaining((r) => Math.max(0, r - 30))} hitSlop={8} style={styles.adjust}>
         <Text style={styles.adjustText}>−30s</Text>
       </Pressable>
       <View style={styles.center}>
-        <Ionicons name="timer-outline" size={18} color={colors.white} />
+        <Ionicons name="timer-outline" size={20} color={colors.sky} />
         <Text style={styles.time}>{finished ? '¡Listo!' : fmt(remaining)}</Text>
       </View>
       <Pressable onPress={() => setRemaining((r) => r + 30)} hitSlop={8} style={styles.adjust}>
@@ -60,34 +66,34 @@ export function RestTimer({ seconds, onDone, onDismiss }: Props) {
       <Pressable onPress={onDismiss} hitSlop={8} style={styles.close}>
         <Ionicons name="close" size={20} color={colors.white} />
       </Pressable>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: spacing.lg,
+    bottom: 100,
     left: spacing.md,
     right: spacing.md,
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    backgroundColor: colors.navy800,
+    borderRadius: radius.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: spacing.md,
     ...shadow.soft,
+    shadowOpacity: 0.25,
   },
-  finished: { backgroundColor: colors.primaryDark },
   adjust: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
   },
   adjustText: { color: colors.white, fontWeight: '700', fontSize: 13 },
-  center: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  time: { color: colors.white, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  center: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  time: { color: colors.white, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] },
   close: { marginLeft: 6 },
 });

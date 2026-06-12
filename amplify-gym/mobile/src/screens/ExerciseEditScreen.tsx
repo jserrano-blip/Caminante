@@ -12,7 +12,7 @@ import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import type { RutinasStackParamList } from '../navigation/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<RutinasStackParamList, 'ExerciseEdit'>;
 
@@ -225,11 +225,11 @@ export function ExerciseEditScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
+  content: { padding: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   title: { ...typography.title, fontSize: 24 },
   readOnlyNote: { fontSize: 13, color: colors.textPrimary, lineHeight: 19 },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

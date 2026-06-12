@@ -4,7 +4,7 @@ import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { rootNavigationRef } from './src/navigation/rootNavigation';
@@ -22,6 +22,7 @@ import { ExerciseEditScreen } from './src/screens/ExerciseEditScreen';
 import { ExercisesScreen } from './src/screens/ExercisesScreen';
 import { GymEditScreen } from './src/screens/GymEditScreen';
 import { GymsScreen } from './src/screens/GymsScreen';
+import { HistoryScreen } from './src/screens/HistoryScreen';
 import { LiveWorkoutScreen } from './src/screens/LiveWorkoutScreen';
 import { MealEditScreen } from './src/screens/MealEditScreen';
 import { MoreScreen } from './src/screens/MoreScreen';
@@ -34,7 +35,7 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { StartWorkoutScreen } from './src/screens/StartWorkoutScreen';
 import { ToolsScreen } from './src/screens/ToolsScreen';
 import { WorkoutSummaryScreen } from './src/screens/WorkoutSummaryScreen';
-import { colors } from './src/theme';
+import { colors, shadow } from './src/theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabsParamList>();
@@ -51,6 +52,7 @@ function EntrenarNavigator() {
       <EntrenarStack.Screen name="StartWorkout" component={StartWorkoutScreen} />
       <EntrenarStack.Screen name="LiveWorkout" component={LiveWorkoutScreen} options={{ gestureEnabled: false }} />
       <EntrenarStack.Screen name="WorkoutSummary" component={WorkoutSummaryScreen} />
+      <EntrenarStack.Screen name="History" component={HistoryScreen} />
     </EntrenarStack.Navigator>
   );
 }
@@ -97,21 +99,29 @@ const TAB_ICONS: Record<keyof MainTabsParamList, keyof typeof Ionicons.glyphMap>
   MasTab: 'ellipsis-horizontal',
 };
 
+function TabIcon({ name, focused }: { name: keyof typeof Ionicons.glyphMap; focused: boolean }) {
+  return (
+    <View style={[styles.tabIconWrap, focused && styles.tabIconWrapActive]}>
+      <Ionicons
+        name={focused ? name : (`${name}-outline` as keyof typeof Ionicons.glyphMap)}
+        size={22}
+        color={focused ? colors.white : colors.textMuted}
+      />
+    </View>
+  );
+}
+
 function MainTabs() {
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.surfaceBorder },
-        tabBarIcon: ({ color, size, focused }) => (
-          <Ionicons
-            name={focused ? TAB_ICONS[route.name] : (`${TAB_ICONS[route.name]}-outline` as keyof typeof Ionicons.glyphMap)}
-            size={size}
-            color={color}
-          />
-        ),
+        tabBarStyle: styles.tabBar,
+        tabBarItemStyle: styles.tabBarItem,
+        tabBarIcon: ({ focused }) => <TabIcon name={TAB_ICONS[route.name]} focused={focused} />,
       })}
     >
       <Tabs.Screen name="InicioTab" component={DashboardScreen} options={{ title: 'Inicio' }} />
@@ -129,12 +139,41 @@ const navTheme: Theme = {
     ...DefaultTheme.colors,
     primary: colors.primary,
     background: colors.background,
-    card: colors.background,
+    card: colors.surface,
     text: colors.textPrimary,
-    border: colors.surfaceBorder,
+    border: colors.iceBorder,
     notification: colors.accent,
   },
 };
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    bottom: 24,
+    marginHorizontal: 16,
+    borderRadius: 28,
+    backgroundColor: colors.surface,
+    height: 64,
+    borderTopWidth: 0,
+    paddingBottom: 0,
+    paddingTop: 0,
+    ...shadow.soft,
+  },
+  tabBarItem: {
+    height: 64,
+    justifyContent: 'center',
+  },
+  tabIconWrap: {
+    width: 48,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: colors.primary,
+  },
+});
 
 function Root() {
   const { user, hydrating } = useApp();

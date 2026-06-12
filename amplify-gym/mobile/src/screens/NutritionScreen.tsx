@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { deleteMeal, listMeals } from '../api/endpoints';
@@ -9,13 +9,46 @@ import type { MealPrep } from '../api/types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { NumberInput } from '../components/NumberInput';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { SegmentedControl } from '../components/SegmentedControl';
 import { useApp } from '../context/AppContext';
 import { useLoad } from '../lib/useLoad';
 import type { MasStackParamList } from '../navigation/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'Nutrition'>;
+
+const ACTIVITY = ['Ligera', 'Moderada', 'Alta'] as const;
+const ACTIVITY_FACTOR: Record<(typeof ACTIVITY)[number], number> = {
+  Ligera: 1.375,
+  Moderada: 1.55,
+  Alta: 1.725,
+};
+const GOALS = ['Definición', 'Mantener', 'Volumen'] as const;
+const GOAL_FACTOR: Record<(typeof GOALS)[number], number> = {
+  'Definición': 0.85,
+  Mantener: 1,
+  Volumen: 1.1,
+};
+
+/** TDEE Mifflin-St Jeor + reparto: proteína 2 g/kg, grasa 0.9 g/kg, resto carbohidratos. */
+function macroTargets(opts: {
+  weightKg: number;
+  heightCm: number;
+  age: number;
+  sex: 'M' | 'F';
+  activity: (typeof ACTIVITY)[number];
+  goal: (typeof GOALS)[number];
+}) {
+  const { weightKg, heightCm, age, sex, activity, goal } = opts;
+  const bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + (sex === 'M' ? 5 : -161);
+  const calories = Math.round(bmr * ACTIVITY_FACTOR[activity] * GOAL_FACTOR[goal]);
+  const proteinG = Math.round(weightKg * 2);
+  const fatG = Math.round(weightKg * 0.9);
+  const carbsG = Math.max(0, Math.round((calories - proteinG * 4 - fatG * 9) / 4));
+  return { calories, proteinG, fatG, carbsG };
+}
 
 function MacroPill({ label, value }: { label: string; value: number }) {
   return (
@@ -30,6 +63,22 @@ export function NutritionScreen({ navigation }: Props) {
   const { user } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listMeals(userId), [userId]);
+
+  // calculadora de macros (solo cliente)
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [weightKg, setWeightKg] = useState(80);
+  const [heightCm, setHeightCm] = useState(175);
+  const [age, setAge] = useState(30);
+  const [activity, setActivity] = useState<(typeof ACTIVITY)[number]>('Moderada');
+  const [goal, setGoal] = useState<(typeof GOALS)[number]>('Mantener');
+  const targets = macroTargets({
+    weightKg,
+    heightCm,
+    age,
+    sex: user?.sex === 'F' ? 'F' : 'M',
+    activity,
+    goal,
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -118,6 +167,50 @@ export function NutritionScreen({ navigation }: Props) {
         <View style={styles.body}>
           <Button title="＋ Nueva receta" onPress={() => navigation.navigate('MealEdit', {})} />
 
+          <Card tinted style={{ gap: spacing.sm }}>
+            <Pressable onPress={() => setCalcOpen((v) => !v)} style={styles.calcHeader}>
+              <View style={styles.calcBubble}>
+                <Ionicons name="calculator-outline" size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.mealName}>Calculadora de macros</Text>
+                <Text style={styles.mealMeta}>TDEE Mifflin-St Jeor según tu objetivo</Text>
+              </View>
+              <Ionicons name={calcOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+            </Pressable>
+
+            {calcOpen ? (
+              <>
+                <View style={styles.calcInputs}>
+                  <View style={styles.calcField}>
+                    <Text style={styles.calcLabel}>Peso (kg)</Text>
+                    <NumberInput value={weightKg} onChange={setWeightKg} min={30} max={250} step={1} compact />
+                  </View>
+                  <View style={styles.calcField}>
+                    <Text style={styles.calcLabel}>Altura (cm)</Text>
+                    <NumberInput value={heightCm} onChange={setHeightCm} min={120} max={230} step={1} compact />
+                  </View>
+                  <View style={styles.calcField}>
+                    <Text style={styles.calcLabel}>Edad</Text>
+                    <NumberInput value={age} onChange={setAge} min={14} max={99} step={1} decimals={false} compact />
+                  </View>
+                </View>
+                <Text style={styles.calcLabel}>Actividad</Text>
+                <SegmentedControl options={ACTIVITY} value={activity} onChange={setActivity} />
+                <Text style={styles.calcLabel}>Objetivo</Text>
+                <SegmentedControl options={GOALS} value={goal} onChange={setGoal} />
+
+                <View style={[styles.macros, { marginTop: spacing.sm }]}>
+                  <MacroPill label="P (g)" value={targets.proteinG} />
+                  <MacroPill label="C (g)" value={targets.carbsG} />
+                  <MacroPill label="G (g)" value={targets.fatG} />
+                  <MacroPill label="kcal" value={targets.calories} />
+                </View>
+                <Text style={styles.perServing}>Objetivo diario · proteína 2 g/kg, grasa 0.9 g/kg</Text>
+              </>
+            ) : null}
+          </Card>
+
           {own.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>Mis recetas</Text>
@@ -139,7 +232,7 @@ export function NutritionScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
   mealHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
@@ -150,7 +243,7 @@ const styles = StyleSheet.create({
   macros: { flexDirection: 'row', gap: spacing.sm },
   macroPill: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -160,6 +253,18 @@ const styles = StyleSheet.create({
   macroValue: { fontSize: 16, fontWeight: '700', color: colors.primary },
   macroLabel: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
   perServing: { fontSize: 10, color: colors.textMuted, marginTop: -4 },
+  calcHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  calcBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calcInputs: { flexDirection: 'row', gap: spacing.sm },
+  calcField: { flex: 1 },
+  calcLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 4, marginBottom: 2 },
   applianceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   applianceText: { flex: 1, fontSize: 12, color: colors.accent, fontWeight: '500' },
   instructions: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },

@@ -18,7 +18,7 @@ import { formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/formula
 import { generateWarmup } from '../lib/warmup';
 import { errorMessage } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<EntrenarStackParamList, 'LiveWorkout'>;
 
@@ -354,7 +354,9 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
                           {suggestion.suggestion.reps} — {suggestion.suggestion.rationale}
                         </Text>
                       ) : (
-                        <Text style={styles.suggestionText}>Primera vez con este ejercicio 💪</Text>
+                        <Text style={styles.suggestionText}>
+                          Primera vez con este ejercicio — establece tu marca
+                        </Text>
                       )}
                     </View>
                     {suggestion.suggestion ? (
@@ -518,7 +520,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
   subtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  content: { paddingHorizontal: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
+  content: { paddingHorizontal: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   block: { gap: spacing.sm },
   blockHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   exerciseName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
@@ -527,7 +529,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderRadius: radius.sm,

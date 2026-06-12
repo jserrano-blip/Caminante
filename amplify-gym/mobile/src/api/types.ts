@@ -145,6 +145,7 @@ export interface WorkoutSession {
   finishedAt: string | null;
   notes: string | null;
   sets?: WorkoutSet[];
+  gym?: Gym | null;
 }
 
 export type RecordType = 'WEIGHT' | 'E1RM' | 'VOLUME' | 'REPS';

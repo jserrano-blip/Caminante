@@ -15,7 +15,7 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import { resetToProfileSelect } from '../navigation/rootNavigation';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 const DATASETS: { key: ExportDataset; label: string }[] = [
   { key: 'sets', label: 'Series (todas)' },
@@ -208,12 +208,12 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
   hint: { fontSize: 12, color: colors.textMuted, lineHeight: 17 },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

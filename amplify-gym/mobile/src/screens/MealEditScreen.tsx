@@ -10,7 +10,7 @@ import { NumberInput } from '../components/NumberInput';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import type { MasStackParamList } from '../navigation/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'MealEdit'>;
 
@@ -142,11 +142,11 @@ export function MealEditScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
+  content: { padding: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   title: { ...typography.title, fontSize: 24 },
   sectionTitle: { ...typography.subtitle, fontSize: 15 },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

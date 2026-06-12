@@ -13,7 +13,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
 import { useLoad } from '../lib/useLoad';
 import type { RutinasStackParamList } from '../navigation/types';
-import { colors, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, spacing, typography } from '../theme';
 
 type Props = NativeStackScreenProps<RutinasStackParamList, 'Exercises'>;
 
@@ -67,7 +67,7 @@ export function ExercisesScreen({ navigation }: Props) {
         <Text style={styles.name}>
           {isVariant ? '↳ ' : ''}
           {ex.name}
-          {ex.isPowerlift ? '  🏆' : ''}
+          {ex.isPowerlift ? <Text style={styles.sbdTag}>  SBD</Text> : null}
         </Text>
         <Text style={styles.meta}>
           {ex.category}
@@ -107,7 +107,7 @@ export function ExercisesScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   groupTitle: { ...typography.subtitle, fontSize: 14, color: colors.accent, marginBottom: 4 },
   row: {
@@ -115,9 +115,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    borderBottomColor: colors.ice,
   },
   variantRow: { paddingLeft: spacing.lg },
   name: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  sbdTag: { fontSize: 10, fontWeight: '800', color: colors.accent, letterSpacing: 0.5 },
   meta: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
 });

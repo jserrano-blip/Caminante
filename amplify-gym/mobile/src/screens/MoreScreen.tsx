@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import { ScreenHeader } from '../components/ScreenHeader';
 import type { MasStackParamList } from '../navigation/types';
-import { colors, radius, spacing } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'More'>;
 
@@ -50,14 +50,14 @@ export function MoreScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.sm },
   itemCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   iconWrap: {
     width: 42,
     height: 42,
     borderRadius: radius.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     alignSelf: 'flex-start',

@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   profileMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   formTitle: { ...typography.subtitle, marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

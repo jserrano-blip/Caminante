@@ -17,7 +17,7 @@ import {
   wilks,
   type Sex,
 } from '../lib/formulas';
-import { colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
 
 export function ToolsScreen() {
   const { user, unit, gym } = useApp();
@@ -111,7 +111,7 @@ export function ToolsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
   row: { flexDirection: 'row', gap: spacing.md },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   rmTable: { flexDirection: 'row', gap: spacing.sm, marginTop: 4 },
   rmCell: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderRadius: radius.sm,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   scoreRow: { flexDirection: 'row', gap: spacing.sm },
   scoreBox: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.ice,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     borderRadius: radius.sm,

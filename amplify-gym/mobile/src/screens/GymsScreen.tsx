@@ -14,7 +14,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
 import { useLoad } from '../lib/useLoad';
 import type { MasStackParamList } from '../navigation/types';
-import { colors, spacing } from '../theme';
+import { TAB_BAR_SPACE, colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'Gyms'>;
 
@@ -109,7 +109,7 @@ export function GymsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   gymCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

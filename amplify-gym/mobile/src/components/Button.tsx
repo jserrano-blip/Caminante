@@ -1,6 +1,7 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, shadow, spacing } from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 
@@ -24,7 +25,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       style={({ pressed }) => [
         styles.base,
         small && styles.small,
-        isPrimary && styles.primary,
+        isPrimary && !small && styles.primary,
         isSecondary && styles.secondary,
         variant === 'ghost' && styles.ghost,
         (disabled || loading) && styles.disabled,
@@ -32,6 +33,14 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
         style,
       ]}
     >
+      {isPrimary ? (
+        <LinearGradient
+          colors={[colors.primary, colors.accent]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
       {loading ? (
         <ActivityIndicator color={isPrimary ? colors.white : colors.primary} />
       ) : (
@@ -56,21 +65,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   small: {
     paddingVertical: 8,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
   },
-  primary: { backgroundColor: colors.primary },
+  primary: {
+    height: 52,
+    paddingVertical: 0,
+    ...shadow.soft,
+  },
   secondary: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: colors.iceBorder,
   },
   ghost: { backgroundColor: 'transparent' },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
-  label: { fontSize: 16, fontWeight: '600' },
-  labelSmall: { fontSize: 14 },
+  label: { fontSize: 16, fontWeight: '700' },
+  labelSmall: { fontSize: 14, fontWeight: '600' },
 });
