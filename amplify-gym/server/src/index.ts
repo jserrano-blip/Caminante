@@ -10,6 +10,7 @@ import suggestionsRouter from './routes/suggestions';
 import recordsRouter from './routes/records';
 import metricsRouter from './routes/metrics';
 import recoveryRouter from './routes/recovery';
+import readinessRouter from './routes/readiness';
 import mealsRouter from './routes/meals';
 import analyticsRouter from './routes/analytics';
 import exportRouter from './routes/export';
@@ -25,6 +26,17 @@ api.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
+// Autenticación por clave de API (opcional): si API_KEY está definida en el
+// entorno, toda petición debe traerla en el header `x-api-key` o en `?key=`
+// (la query permite abrir el CSV de exportación desde el navegador).
+api.use((req: Request, res: Response, next: NextFunction) => {
+  const required = process.env.API_KEY;
+  if (!required) return next();
+  const provided = req.header('x-api-key') ?? (req.query.key as string | undefined);
+  if (provided === required) return next();
+  res.status(401).json({ error: 'No autorizado: falta o es inválida la clave de API' });
+});
+
 api.use('/users', usersRouter);
 api.use('/gyms', gymsRouter);
 api.use('/exercises', exercisesRouter);
@@ -34,6 +46,7 @@ api.use(suggestionsRouter); // /suggestions
 api.use('/records', recordsRouter);
 api.use(metricsRouter); // /metrics y /relative-strength
 api.use('/recovery', recoveryRouter);
+api.use(readinessRouter); // /readiness
 api.use('/meals', mealsRouter);
 api.use('/analytics', analyticsRouter);
 api.use(exportRouter); // /export.csv

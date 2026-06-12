@@ -4,6 +4,12 @@ Base URL: `http://<host>:4000/api`. Todas las respuestas son JSON (`Content-Type
 
 Errores: `{ "error": string }` con status 400/404/500.
 
+**Autenticación (opcional)**: si el servidor define la variable de entorno `API_KEY`, todos los endpoints (excepto `/health`) exigen la clave en el header `x-api-key` o en el query param `?key=`. Sin clave o con clave incorrecta → 401.
+
+## Recuperación inteligente (deload)
+- `GET /readiness?userId=` → cruza los últimos 7 días de recuperación y RPE:
+  `{ hasData, score (0-100), level: 'OK'|'CUIDADO'|'DELOAD', recommendation, sleepAvg, sorenessAvg, fatigueAvg, rpeAvg }`
+
 ## Usuarios (perfiles privados)
 - `GET    /users` → `User[]`
 - `POST   /users` body `{ name, avatarColor?, weightUnit?, sex? }` → `User`
