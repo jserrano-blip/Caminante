@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   message: string;
@@ -10,31 +11,35 @@ interface Props {
 
 /** Banner azul amable para errores de red / servidor. */
 export function ErrorBanner({ message, onRetry }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <View style={styles.banner}>
-      <Ionicons name="cloud-offline-outline" size={20} color={colors.white} />
+      <Ionicons name="cloud-offline-outline" size={20} color={c.white} />
       <Text style={styles.text}>{message}</Text>
       {onRetry ? (
         <Pressable onPress={onRetry} hitSlop={8} style={styles.retry}>
-          <Ionicons name="refresh" size={18} color={colors.white} />
+          <Ionicons name="refresh" size={18} color={c.white} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: c.navy700,
     borderRadius: radius.md,
     paddingVertical: 12,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
-  text: { flex: 1, color: colors.white, fontSize: 13, fontWeight: '500' },
+  text: { flex: 1, color: c.white, fontSize: 13, fontWeight: '500' },
   retry: { padding: 2 },
 });
+}

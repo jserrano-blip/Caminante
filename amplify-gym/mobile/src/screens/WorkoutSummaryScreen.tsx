@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSession, listRecords } from '../api/endpoints';
@@ -13,7 +13,8 @@ import { useApp } from '../context/AppContext';
 import { formatWeight } from '../lib/formulas';
 import { errorMessage } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
-import { colors, radius, spacing, TAB_BAR_SPACE, typography } from '../theme';
+import { radius, spacing, TAB_BAR_SPACE, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<EntrenarStackParamList, 'WorkoutSummary'>;
 
@@ -47,6 +48,9 @@ function summaryFromSession(session: WorkoutSession, records: PersonalRecord[]):
 }
 
 export function WorkoutSummaryScreen({ navigation, route }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
+  const typography = useMemo(() => makeTypography(c), [c]);
   const { summary: liveSummary, sessionName, sessionId } = route.params;
   const { user, unit } = useApp();
   const readOnly = !liveSummary && !!sessionId;
@@ -80,7 +84,7 @@ export function WorkoutSummaryScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
         <Card variant="hero" style={styles.hero}>
           <View style={styles.trophyBubble}>
-            <Ionicons name={hasRecords ? 'trophy' : 'checkmark-done'} size={40} color={colors.white} />
+            <Ionicons name={hasRecords ? 'trophy' : 'checkmark-done'} size={40} color={c.white} />
           </View>
           <Text style={styles.heroEyebrow}>{readOnly ? 'SESIÓN PASADA' : 'SESIÓN COMPLETADA'}</Text>
           <Text style={styles.heroTitle}>{readOnly ? name : '¡Buen trabajo!'}</Text>
@@ -101,7 +105,7 @@ export function WorkoutSummaryScreen({ navigation, route }: Props) {
         </Card>
 
         {error ? <ErrorBanner message={error} /> : null}
-        {!summary && !error ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.xl }} /> : null}
+        {!summary && !error ? <ActivityIndicator color={c.primary} style={{ marginVertical: spacing.xl }} /> : null}
 
         {summary ? (
           <Card style={{ marginTop: spacing.md }}>
@@ -115,7 +119,7 @@ export function WorkoutSummaryScreen({ navigation, route }: Props) {
               summary.newRecords.map((rec) => (
                 <View key={rec.id} style={styles.recordRow}>
                   <View style={styles.recordBubble}>
-                    <Ionicons name={RECORD_ICON[rec.type] ?? 'trophy'} size={18} color={colors.primary} />
+                    <Ionicons name={RECORD_ICON[rec.type] ?? 'trophy'} size={18} color={c.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.recordName}>{rec.exercise?.name ?? 'Ejercicio'}</Text>
@@ -142,8 +146,10 @@ export function WorkoutSummaryScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: spacing.md, paddingBottom: TAB_BAR_SPACE },
   hero: { alignItems: 'center', paddingVertical: spacing.xl },
   trophyBubble: {
@@ -158,7 +164,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   heroEyebrow: { ...typography.eyebrow, color: 'rgba(255,255,255,0.7)' },
-  heroTitle: { fontSize: 26, fontWeight: '800', color: colors.white, marginTop: 4, textAlign: 'center' },
+  heroTitle: { fontSize: 26, fontWeight: '800', color: c.white, marginTop: 4, textAlign: 'center' },
   heroSub: { fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   tiles: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg, alignSelf: 'stretch' },
   sectionTitle: { ...typography.subtitle, fontSize: 19, marginTop: 4, marginBottom: spacing.sm },
@@ -169,17 +175,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.ice,
+    borderBottomColor: c.ice,
   },
   recordBubble: {
     width: 38,
     height: 38,
     borderRadius: radius.full,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  recordName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  recordType: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
-  recordValue: { fontSize: 16, fontWeight: '700', color: colors.primary },
+  recordName: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  recordType: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+  recordValue: { fontSize: 16, fontWeight: '700', color: c.primary },
 });
+}

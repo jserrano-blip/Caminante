@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius } from '../theme';
+import { radius, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   value: number;
@@ -24,6 +25,8 @@ function clamp(v: number, min?: number, max?: number): number {
 
 /** Stepper numérico: − [valor editable] + */
 export function NumberInput({ value, onChange, step = 1, min, max, decimals = true, suffix, style, compact }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const [text, setText] = useState(String(value));
 
   useEffect(() => {
@@ -75,14 +78,15 @@ export function NumberInput({ value, onChange, step = 1, min, max, decimals = tr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     overflow: 'hidden',
   },
   compact: { borderRadius: radius.sm },
@@ -92,16 +96,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonText: { fontSize: 18, fontWeight: '700', color: colors.primary },
+  buttonText: { fontSize: 18, fontWeight: '700', color: c.primary },
   valueWrap: { flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' },
   input: {
     minWidth: 44,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     paddingVertical: 6,
   },
   inputCompact: { fontSize: 15, minWidth: 36, paddingVertical: 4 },
-  suffix: { fontSize: 12, color: colors.textMuted, marginLeft: 2 },
+  suffix: { fontSize: 12, color: c.textMuted, marginLeft: 2 },
 });
+}

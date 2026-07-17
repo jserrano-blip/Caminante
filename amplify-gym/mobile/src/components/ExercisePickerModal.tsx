@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { Exercise } from '../api/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -32,6 +33,8 @@ function flatten(exercises: Exercise[]): Exercise[] {
 }
 
 export function ExercisePickerModal({ visible, exercises, onSelect, onClose, title = 'Elegir ejercicio' }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const [query, setQuery] = useState('');
   const all = useMemo(() => flatten(exercises), [exercises]);
   const filtered = useMemo(() => {
@@ -50,7 +53,7 @@ export function ExercisePickerModal({ visible, exercises, onSelect, onClose, tit
         <TextInput
           style={styles.search}
           placeholder="Buscar ejercicio…"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={c.textMuted}
           value={query}
           onChangeText={setQuery}
         />
@@ -76,7 +79,7 @@ export function ExercisePickerModal({ visible, exercises, onSelect, onClose, tit
                   {item.userId ? ' · propio' : ''}
                 </Text>
               </View>
-              <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+              <Ionicons name="add-circle-outline" size={22} color={c.accent} />
             </Pressable>
           )}
           ListEmptyComponent={<Text style={styles.empty}>Sin resultados</Text>}
@@ -86,10 +89,12 @@ export function ExercisePickerModal({ visible, exercises, onSelect, onClose, tit
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(30, 58, 138, 0.35)' },
   sheet: {
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,
@@ -97,14 +102,14 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.subtitle, fontSize: 20, marginBottom: spacing.sm },
   search: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: spacing.sm,
   },
   row: {
@@ -112,9 +117,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.ice,
+    borderBottomColor: c.ice,
   },
-  name: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  meta: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
-  empty: { textAlign: 'center', color: colors.textMuted, marginTop: spacing.lg },
+  name: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  meta: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+  empty: { textAlign: 'center', color: c.textMuted, marginTop: spacing.lg },
 });
+}

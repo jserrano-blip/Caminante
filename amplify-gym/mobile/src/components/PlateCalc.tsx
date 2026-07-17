@@ -9,7 +9,8 @@ import {
   type PlateResult,
   type PlateStock,
 } from '../lib/plateCalculator';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import { Button } from './Button';
 import { NumberInput } from './NumberInput';
 
@@ -26,6 +27,7 @@ export function platesFromGym(gym: Gym | null): { barKg: number; plates: PlateSt
 
 /** Visualización SVG de la barra cargada: discos como rectángulos azules proporcionales. */
 export function BarVisualization({ barKg, result }: { barKg: number; result: PlateResult }) {
+  const { colors: c } = useTheme();
   const width = 320;
   const height = 120;
   const midY = height / 2;
@@ -47,9 +49,9 @@ export function BarVisualization({ barKg, result }: { barKg: number; result: Pla
     <View style={{ alignItems: 'center' }}>
       <Svg width={width} height={height}>
         {/* barra */}
-        <Line x1={8} y1={midY} x2={width - 8} y2={midY} stroke={colors.textMuted} strokeWidth={6} strokeLinecap="round" />
+        <Line x1={8} y1={midY} x2={width - 8} y2={midY} stroke={c.textMuted} strokeWidth={6} strokeLinecap="round" />
         {/* tope del manguito */}
-        <Rect x={sleeveStart - 8} y={midY - 16} width={6} height={32} rx={2} fill={colors.textMuted} />
+        <Rect x={sleeveStart - 8} y={midY - 16} width={6} height={32} rx={2} fill={c.textMuted} />
         {/* discos (lado derecho, espejo del izquierdo) */}
         {side.map((p, i) => {
           const h = plateH(p.weightKg);
@@ -62,13 +64,13 @@ export function BarVisualization({ barKg, result }: { barKg: number; result: Pla
                 width={plateW}
                 height={h}
                 rx={3}
-                fill={p.weightKg >= 15 ? colors.primary : colors.accent}
+                fill={p.weightKg >= 15 ? c.primary : c.accent}
               />
               <SvgText
                 x={x + plateW / 2}
                 y={midY + h / 2 + 12}
                 fontSize={8}
-                fill={colors.textPrimary}
+                fill={c.textPrimary}
                 textAnchor="middle"
               >
                 {String(p.weightKg)}
@@ -77,7 +79,7 @@ export function BarVisualization({ barKg, result }: { barKg: number; result: Pla
           );
         })}
         {/* etiqueta de barra */}
-        <SvgText x={width / 2 - 40} y={midY - 12} fontSize={10} fill={colors.textMuted} textAnchor="middle">
+        <SvgText x={width / 2 - 40} y={midY - 12} fontSize={10} fill={c.textMuted} textAnchor="middle">
           {`barra ${barKg} kg`}
         </SvgText>
       </Svg>
@@ -93,6 +95,8 @@ interface PlateCalcViewProps {
 
 /** Calculadora de discos embebible (se usa en el modal del entrenamiento y en Herramientas). */
 export function PlateCalcView({ initialTargetKg = 60, gym, unit }: PlateCalcViewProps) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { barKg: gymBar, plates } = useMemo(() => platesFromGym(gym), [gym]);
   const [targetDisplay, setTargetDisplay] = useState(toDisplayWeight(initialTargetKg, unit));
   const [barKg, setBarKg] = useState(gymBar);
@@ -151,6 +155,8 @@ interface PlateCalcModalProps {
 }
 
 export function PlateCalcModal({ visible, onClose, initialTargetKg, gym, unit }: PlateCalcModalProps) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
@@ -165,10 +171,12 @@ export function PlateCalcModal({ visible, onClose, initialTargetKg, gym, unit }:
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(30, 58, 138, 0.35)' },
   sheet: {
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,
@@ -178,16 +186,17 @@ const styles = StyleSheet.create({
   title: { ...typography.subtitle, fontSize: 20, marginBottom: spacing.md },
   row: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
   field: { flex: 1 },
-  fieldLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4 },
+  fieldLabel: { fontSize: 12, color: c.textMuted, marginBottom: 4 },
   resultBox: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     padding: spacing.md,
     marginTop: spacing.sm,
   },
-  resultText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
-  achieved: { fontSize: 13, color: colors.primary, marginTop: 6, fontWeight: '600' },
-  source: { fontSize: 11, color: colors.textMuted, marginTop: 6 },
+  resultText: { fontSize: 14, color: c.textPrimary, fontWeight: '600' },
+  achieved: { fontSize: 13, color: c.primary, marginTop: 6, fontWeight: '600' },
+  source: { fontSize: 11, color: c.textMuted, marginTop: 6 },
 });
+}

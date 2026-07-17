@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius } from '../theme';
+import { radius, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props<T extends string> {
   options: readonly T[];
@@ -11,6 +12,8 @@ interface Props<T extends string> {
 }
 
 export function SegmentedControl<T extends string>({ options, value, onChange, labels, style }: Props<T>) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <View style={[styles.container, style]}>
       {options.map((opt) => {
@@ -31,13 +34,14 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     padding: 3,
   },
   segment: {
@@ -46,7 +50,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.sm - 3,
   },
-  segmentSelected: { backgroundColor: colors.primary },
-  label: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  labelSelected: { color: colors.white },
+  segmentSelected: { backgroundColor: c.primary },
+  label: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
+  labelSelected: { color: c.white },
 });
+}

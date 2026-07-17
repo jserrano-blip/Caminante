@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createRecovery, listRecovery } from '../api/endpoints';
@@ -10,7 +10,8 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { SimpleSlider } from '../components/SimpleSlider';
 import { useApp } from '../context/AppContext';
 import { errorMessage, useLoad } from '../lib/useLoad';
-import { TAB_BAR_SPACE, colors, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -18,6 +19,9 @@ function fmtDate(iso: string): string {
 }
 
 export function RecoveryScreen() {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
+  const typography = useMemo(() => makeTypography(c), [c]);
   const { user } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listRecovery(userId), [userId]);
@@ -72,7 +76,7 @@ export function RecoveryScreen() {
 
           <Card>
             <Text style={styles.sectionTitle}>Historial reciente</Text>
-            {loading ? <ActivityIndicator color={colors.primary} /> : null}
+            {loading ? <ActivityIndicator color={c.primary} /> : null}
             {!loading && recent.length === 0 ? (
               <Text style={typography.muted}>Aún no hay registros de recuperación.</Text>
             ) : null}
@@ -81,13 +85,13 @@ export function RecoveryScreen() {
                 <Text style={styles.logDate}>{fmtDate(log.date)}</Text>
                 <View style={styles.logStats}>
                   <Text style={styles.logStat}>
-                    <Ionicons name="moon-outline" size={12} color={colors.textMuted} /> {log.sleepHours} h
+                    <Ionicons name="moon-outline" size={12} color={c.textMuted} /> {log.sleepHours} h
                   </Text>
                   <Text style={styles.logStat}>
-                    <Ionicons name="fitness-outline" size={12} color={colors.textMuted} /> dolor {log.soreness}
+                    <Ionicons name="fitness-outline" size={12} color={c.textMuted} /> dolor {log.soreness}
                   </Text>
                   <Text style={styles.logStat}>
-                    <Ionicons name="battery-half-outline" size={12} color={colors.textMuted} /> fatiga {log.fatigue}
+                    <Ionicons name="battery-half-outline" size={12} color={c.textMuted} /> fatiga {log.fatigue}
                   </Text>
                 </View>
               </View>
@@ -99,21 +103,24 @@ export function RecoveryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle, marginBottom: spacing.sm },
-  formError: { color: colors.primaryDark, fontSize: 13, fontWeight: '600', marginTop: 4 },
+  formError: { color: c.primaryDark, fontSize: 13, fontWeight: '600', marginTop: 4 },
   logRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: colors.ice,
+    borderBottomColor: c.ice,
   },
-  logDate: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, textTransform: 'capitalize' },
+  logDate: { fontSize: 13, fontWeight: '600', color: c.textPrimary, textTransform: 'capitalize' },
   logStats: { flexDirection: 'row', gap: spacing.sm },
-  logStat: { fontSize: 12, color: colors.accent },
+  logStat: { fontSize: 12, color: c.accent },
 });
+}

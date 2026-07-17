@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { rootNavigationRef } from './src/navigation/rootNavigation';
 import type {
   CuerpoStackParamList,
@@ -35,7 +36,7 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { StartWorkoutScreen } from './src/screens/StartWorkoutScreen';
 import { ToolsScreen } from './src/screens/ToolsScreen';
 import { WorkoutSummaryScreen } from './src/screens/WorkoutSummaryScreen';
-import { colors, shadow } from './src/theme';
+import { shadow, type ThemeColors } from './src/theme';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabsParamList>();
@@ -100,25 +101,29 @@ const TAB_ICONS: Record<keyof MainTabsParamList, keyof typeof Ionicons.glyphMap>
 };
 
 function TabIcon({ name, focused }: { name: keyof typeof Ionicons.glyphMap; focused: boolean }) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <View style={[styles.tabIconWrap, focused && styles.tabIconWrapActive]}>
       <Ionicons
         name={focused ? name : (`${name}-outline` as keyof typeof Ionicons.glyphMap)}
         size={22}
-        color={focused ? colors.white : colors.textMuted}
+        color={focused ? c.white : c.textMuted}
       />
     </View>
   );
 }
 
 function MainTabs() {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: c.primary,
+        tabBarInactiveTintColor: c.textMuted,
         tabBarStyle: styles.tabBar,
         tabBarItemStyle: styles.tabBarItem,
         tabBarIcon: ({ focused }) => <TabIcon name={TAB_ICONS[route.name]} focused={focused} />,
@@ -133,55 +138,58 @@ function MainTabs() {
   );
 }
 
-const navTheme: Theme = {
-  ...DefaultTheme,
+const makeNavTheme = (c: ThemeColors, resolved: 'light' | 'dark'): Theme => ({
+  ...(resolved === 'dark' ? DarkTheme : DefaultTheme),
   colors: {
-    ...DefaultTheme.colors,
-    primary: colors.primary,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.textPrimary,
-    border: colors.iceBorder,
-    notification: colors.accent,
-  },
-};
-
-const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    bottom: 24,
-    marginHorizontal: 16,
-    borderRadius: 28,
-    backgroundColor: colors.surface,
-    height: 64,
-    borderTopWidth: 0,
-    paddingBottom: 0,
-    paddingTop: 0,
-    ...shadow.soft,
-  },
-  tabBarItem: {
-    height: 64,
-    justifyContent: 'center',
-  },
-  tabIconWrap: {
-    width: 48,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabIconWrapActive: {
-    backgroundColor: colors.primary,
+    ...(resolved === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+    primary: c.primary,
+    background: c.background,
+    card: c.surface,
+    text: c.textPrimary,
+    border: c.iceBorder,
+    notification: c.accent,
   },
 });
 
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    tabBar: {
+      position: 'absolute',
+      bottom: 24,
+      marginHorizontal: 16,
+      borderRadius: 28,
+      backgroundColor: c.surface,
+      height: 64,
+      borderTopWidth: 0,
+      paddingBottom: 0,
+      paddingTop: 0,
+      ...shadow.soft,
+    },
+    tabBarItem: {
+      height: 64,
+      justifyContent: 'center',
+    },
+    tabIconWrap: {
+      width: 48,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tabIconWrapActive: {
+      backgroundColor: c.primary,
+    },
+  });
+
 function Root() {
   const { user, hydrating } = useApp();
+  const { colors: c, resolved } = useTheme();
+  const navTheme = useMemo(() => makeNavTheme(c, resolved), [c, resolved]);
 
   if (hydrating) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background }}>
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }
@@ -199,12 +207,19 @@ function Root() {
   );
 }
 
+function ThemedStatusBar() {
+  const { resolved } = useTheme();
+  return <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <AppProvider>
-        <StatusBar style="dark" />
-        <Root />
+        <ThemeProvider>
+          <ThemedStatusBar />
+          <Root />
+        </ThemeProvider>
       </AppProvider>
     </SafeAreaProvider>
   );

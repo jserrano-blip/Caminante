@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createUser, listUsers } from '../api/endpoints';
@@ -13,11 +13,14 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { useApp } from '../context/AppContext';
 import { errorMessage, useLoad } from '../lib/useLoad';
 import type { RootStackParamList } from '../navigation/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProfileSelect'>;
 
 export function ProfileSelectScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { setUser } = useApp();
   const { data: users, loading, error, reload } = useLoad(() => listUsers(), []);
   const [creating, setCreating] = useState(false);
@@ -53,13 +56,13 @@ export function ProfileSelectScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
-          <Ionicons name="barbell" size={42} color={colors.primary} />
+          <Ionicons name="barbell" size={42} color={c.primary} />
           <Text style={styles.appName}>Amplify Gym</Text>
           <Text style={styles.tagline}>¿Quién entrena hoy?</Text>
         </View>
 
         {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
-        {loading ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} /> : null}
+        {loading ? <ActivityIndicator color={c.primary} style={{ marginVertical: spacing.lg }} /> : null}
 
         {!loading && users && users.length === 0 && !creating ? (
           <EmptyState icon="person-add-outline" title="Aún no hay perfiles" subtitle="Crea el primero para empezar" />
@@ -68,7 +71,7 @@ export function ProfileSelectScreen({ navigation }: Props) {
         {users?.map((user) => (
           <Pressable key={user.id} onPress={() => select(user)}>
             <Card style={styles.profileCard}>
-              <View style={[styles.avatar, { backgroundColor: user.avatarColor || colors.accent }]}>
+              <View style={[styles.avatar, { backgroundColor: user.avatarColor || c.accent }]}>
                 <Text style={styles.avatarText}>{user.name.slice(0, 1).toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -77,7 +80,7 @@ export function ProfileSelectScreen({ navigation }: Props) {
                   {user.sex === 'F' ? 'Mujer' : 'Hombre'} · prefiere {user.weightUnit}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
             </Card>
           </Pressable>
         ))}
@@ -88,7 +91,7 @@ export function ProfileSelectScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Nombre"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
               value={name}
               onChangeText={setName}
               autoFocus
@@ -121,8 +124,10 @@ export function ProfileSelectScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xl },
   hero: { alignItems: 'center', marginVertical: spacing.xl },
   appName: { ...typography.title, marginTop: spacing.sm },
@@ -140,22 +145,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: colors.white, fontSize: 20, fontWeight: '700' },
-  profileName: { fontSize: 17, fontWeight: '600', color: colors.textPrimary },
-  profileMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  avatarText: { color: c.white, fontSize: 20, fontWeight: '700' },
+  profileName: { fontSize: 17, fontWeight: '600', color: c.textPrimary },
+  profileMeta: { fontSize: 12, color: c.textMuted, marginTop: 2 },
   formTitle: { ...typography.subtitle, marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: spacing.sm,
   },
-  fieldLabel: { fontSize: 12, color: colors.textMuted, marginTop: spacing.sm, marginBottom: 4 },
-  formError: { color: colors.primaryDark, fontSize: 13, marginTop: spacing.sm, fontWeight: '600' },
+  fieldLabel: { fontSize: 12, color: c.textMuted, marginTop: spacing.sm, marginBottom: 4 },
+  formError: { color: c.primaryDark, fontSize: 13, marginTop: spacing.sm, fontWeight: '600' },
   formButtons: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
 });
+}

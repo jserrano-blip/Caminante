@@ -13,13 +13,16 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
 import { useLoad } from '../lib/useLoad';
 import type { RutinasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RutinasStackParamList, 'Exercises'>;
 
 const GROUP_ORDER = ['PECHO', 'ESPALDA', 'PIERNA', 'HOMBRO', 'BRAZO', 'CORE', 'OTRO'];
 
 export function ExercisesScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listExercises(userId), [userId]);
@@ -74,7 +77,7 @@ export function ExercisesScreen({ navigation }: Props) {
           {ex.userId ? ' · propio' : ' · catálogo'}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
     </Pressable>
   );
 
@@ -83,7 +86,7 @@ export function ExercisesScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenHeader title="Ejercicios" subtitle="Catálogo y variantes" />
         {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
-        {loading ? <ActivityIndicator color={colors.primary} style={{ margin: spacing.lg }} /> : null}
+        {loading ? <ActivityIndicator color={c.primary} style={{ margin: spacing.lg }} /> : null}
 
         <View style={styles.body}>
           <Button title="＋ Crear ejercicio propio" onPress={() => navigation.navigate('ExerciseEdit', {})} />
@@ -105,20 +108,23 @@ export function ExercisesScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
-  groupTitle: { ...typography.subtitle, fontSize: 14, color: colors.accent, marginBottom: 4 },
+  groupTitle: { ...typography.subtitle, fontSize: 14, color: c.accent, marginBottom: 4 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: colors.ice,
+    borderBottomColor: c.ice,
   },
   variantRow: { paddingLeft: spacing.lg },
-  name: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  sbdTag: { fontSize: 10, fontWeight: '800', color: colors.accent, letterSpacing: 0.5 },
-  meta: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+  name: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
+  sbdTag: { fontSize: 10, fontWeight: '800', color: c.accent, letterSpacing: 0.5 },
+  meta: { fontSize: 11, color: c.textMuted, marginTop: 1 },
 });
+}

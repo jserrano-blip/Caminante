@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createSession, listGyms, listRoutines } from '../api/endpoints';
@@ -14,11 +14,14 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
 import { errorMessage, useLoad } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<EntrenarStackParamList, 'StartWorkout'>;
 
 export function StartWorkoutScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user, gym, setGym } = useApp();
   const userId = user?.id ?? '';
   const routines = useLoad(() => listRoutines(userId), [userId]);
@@ -63,7 +66,7 @@ export function StartWorkoutScreen({ navigation }: Props) {
           right={
             <Pressable onPress={() => navigation.navigate('History')} hitSlop={8}>
               <View style={styles.headerLink}>
-                <Ionicons name="time-outline" size={18} color={colors.primary} />
+                <Ionicons name="time-outline" size={18} color={c.primary} />
                 <Text style={styles.headerLinkText}>Historial</Text>
               </View>
             </Pressable>
@@ -87,17 +90,17 @@ export function StartWorkoutScreen({ navigation }: Props) {
 
           <Pressable onPress={() => start(undefined)} disabled={starting}>
             <Card style={styles.emptyWorkout}>
-              <Ionicons name="flash-outline" size={26} color={colors.white} />
+              <Ionicons name="flash-outline" size={26} color={c.white} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.emptyWorkoutTitle}>Entrenamiento vacío</Text>
                 <Text style={styles.emptyWorkoutSub}>Agrega ejercicios sobre la marcha</Text>
               </View>
-              {starting ? <ActivityIndicator color={colors.white} /> : <Ionicons name="chevron-forward" size={20} color={colors.white} />}
+              {starting ? <ActivityIndicator color={c.white} /> : <Ionicons name="chevron-forward" size={20} color={c.white} />}
             </Card>
           </Pressable>
 
           <Text style={[styles.sectionTitle, { marginTop: spacing.sm }]}>Mis rutinas</Text>
-          {routines.loading ? <ActivityIndicator color={colors.primary} /> : null}
+          {routines.loading ? <ActivityIndicator color={c.primary} /> : null}
           {routines.data && routines.data.length === 0 ? (
             <EmptyState
               icon="list-outline"
@@ -122,7 +125,7 @@ export function StartWorkoutScreen({ navigation }: Props) {
                       .join(' · ')}
                   </Text>
                 </View>
-                <Ionicons name="play-circle" size={32} color={colors.primary} />
+                <Ionicons name="play-circle" size={32} color={c.primary} />
               </Card>
             </Pressable>
           ))}
@@ -132,27 +135,30 @@ export function StartWorkoutScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
   headerLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerLinkText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+  headerLinkText: { color: c.primary, fontWeight: '600', fontSize: 14 },
   gymHint: { ...typography.muted, marginTop: 2, marginBottom: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   emptyWorkout: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: c.primary,
+    borderColor: c.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     borderRadius: radius.md,
   },
-  emptyWorkoutTitle: { color: colors.white, fontSize: 17, fontWeight: '700' },
-  emptyWorkoutSub: { color: colors.surfaceBorder, fontSize: 13, marginTop: 2 },
+  emptyWorkoutTitle: { color: c.white, fontSize: 17, fontWeight: '700' },
+  emptyWorkoutSub: { color: c.surfaceBorder, fontSize: 13, marginTop: 2 },
   routineCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  routineName: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
-  routineMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  routineExercises: { fontSize: 12, color: colors.accent, marginTop: 4 },
+  routineName: { fontSize: 16, fontWeight: '600', color: c.textPrimary },
+  routineMeta: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  routineExercises: { fontSize: 12, color: c.accent, marginTop: 4 },
 });
+}

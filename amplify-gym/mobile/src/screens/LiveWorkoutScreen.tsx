@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { addSet, deleteSet, finishSession, getSuggestion, listExercises } from '../api/endpoints';
@@ -18,7 +18,8 @@ import { formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/formula
 import { generateWarmup } from '../lib/warmup';
 import { errorMessage } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<EntrenarStackParamList, 'LiveWorkout'>;
 
@@ -67,6 +68,8 @@ function makeSet(partial?: Partial<LocalSet>): LocalSet {
 }
 
 export function LiveWorkoutScreen({ navigation, route }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { sessionId, sessionName, routine } = route.params;
   const { user, unit, setUnit, gym } = useApp();
   const userId = user?.id ?? '';
@@ -337,7 +340,7 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
               {suggestion !== 'loading' && suggestion ? (
                 <Pressable onPress={() => applySuggestion(blockIndex)}>
                   <View style={styles.suggestionChip}>
-                    <Ionicons name="trending-up" size={15} color={colors.primary} />
+                    <Ionicons name="trending-up" size={15} color={c.primary} />
                     <View style={{ flex: 1 }}>
                       {suggestion.last ? (
                         <Text style={styles.suggestionLast}>
@@ -461,7 +464,7 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
                   <View style={styles.rowButtons}>
                     {!set.completed ? (
                       <Pressable onPress={() => removeSetRow(blockIndex, set.key)} hitSlop={6}>
-                        <Ionicons name="remove-circle-outline" size={20} color={colors.textMuted} />
+                        <Ionicons name="remove-circle-outline" size={20} color={c.textMuted} />
                       </Pressable>
                     ) : (
                       <View style={{ width: 20 }} />
@@ -470,7 +473,7 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
                       <Ionicons
                         name={set.completed ? 'checkmark-circle' : 'ellipse-outline'}
                         size={26}
-                        color={set.completed ? colors.primary : colors.surfaceBorder}
+                        color={set.completed ? c.primary : c.surfaceBorder}
                       />
                     </Pressable>
                   </View>
@@ -509,8 +512,9 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,34 +522,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
-  subtitle: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  title: { fontSize: 20, fontWeight: '700', color: c.textPrimary },
+  subtitle: { fontSize: 12, color: c.textMuted, marginTop: 2 },
   content: { paddingHorizontal: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   block: { gap: spacing.sm },
   blockHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  exerciseName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  exerciseMeta: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+  exerciseName: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
+  exerciseMeta: { fontSize: 11, color: c.textMuted, marginTop: 1 },
   suggestionChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     borderRadius: radius.sm,
     padding: spacing.sm,
   },
-  suggestionLast: { fontSize: 11, color: colors.textMuted },
-  suggestionText: { fontSize: 12, color: colors.textPrimary, fontWeight: '600', marginTop: 1 },
-  applyText: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  suggestionLast: { fontSize: 11, color: c.textMuted },
+  suggestionText: { fontSize: 12, color: c.textPrimary, fontWeight: '600', marginTop: 1 },
+  applyText: { fontSize: 12, fontWeight: '700', color: c.primary },
   blockActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   restWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
-  restLabel: { fontSize: 11, color: colors.textMuted },
+  restLabel: { fontSize: 11, color: c.textMuted },
   colHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  colText: { fontSize: 10, color: colors.textMuted, fontWeight: '600', textTransform: 'uppercase' },
+  colText: { fontSize: 10, color: c.textMuted, fontWeight: '600', textTransform: 'uppercase' },
   setRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   setRowDone: { opacity: 0.55 },
-  setNumber: { fontSize: 13, fontWeight: '700', color: colors.accent },
+  setNumber: { fontSize: 13, fontWeight: '700', color: c.accent },
   rowButtons: {
     width: 64,
     flexDirection: 'row',
@@ -555,3 +559,4 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 });
+}

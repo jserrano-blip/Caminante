@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createGym, replaceEquipment, updateGym } from '../api/endpoints';
@@ -12,7 +12,8 @@ import { NumberInput } from '../components/NumberInput';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import type { MasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'GymEdit'>;
 
@@ -35,6 +36,8 @@ let k = 0;
 const nk = () => `eq-${++k}`;
 
 export function GymEditScreen({ navigation, route }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const existing = route.params?.gym;
   const { user, gym: activeGym, setGym } = useApp();
   const userId = user?.id ?? '';
@@ -107,14 +110,14 @@ export function GymEditScreen({ navigation, route }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Nombre (ej. Smart Fit Centro)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={name}
             onChangeText={setName}
           />
           <TextInput
             style={styles.input}
             placeholder="Notas (opcional)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={notes}
             onChangeText={setNotes}
           />
@@ -155,7 +158,7 @@ export function GymEditScreen({ navigation, route }: Props) {
                 />
               </View>
               <Pressable onPress={() => setPlates((prev) => prev.filter((x) => x.key !== p.key))} hitSlop={8}>
-                <Ionicons name="remove-circle-outline" size={22} color={colors.textMuted} />
+                <Ionicons name="remove-circle-outline" size={22} color={c.textMuted} />
               </Pressable>
             </View>
           ))}
@@ -184,7 +187,7 @@ export function GymEditScreen({ navigation, route }: Props) {
                 />
               </View>
               <Pressable onPress={() => setDumbbells((prev) => prev.filter((x) => x.key !== d.key))} hitSlop={8}>
-                <Ionicons name="remove-circle-outline" size={22} color={colors.textMuted} />
+                <Ionicons name="remove-circle-outline" size={22} color={c.textMuted} />
               </Pressable>
             </View>
           ))}
@@ -203,7 +206,7 @@ export function GymEditScreen({ navigation, route }: Props) {
               <TextInput
                 style={[styles.input, { flex: 1.6 }]}
                 placeholder="Nombre de la máquina"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 value={m.name}
                 onChangeText={(t) => setMachines((prev) => prev.map((x) => (x.key === m.key ? { ...x, name: t } : x)))}
               />
@@ -220,7 +223,7 @@ export function GymEditScreen({ navigation, route }: Props) {
                 />
               </View>
               <Pressable onPress={() => setMachines((prev) => prev.filter((x) => x.key !== m.key))} hitSlop={8}>
-                <Ionicons name="remove-circle-outline" size={22} color={colors.textMuted} />
+                <Ionicons name="remove-circle-outline" size={22} color={c.textMuted} />
               </Pressable>
             </View>
           ))}
@@ -238,22 +241,25 @@ export function GymEditScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   title: { ...typography.title, fontSize: 24 },
   sectionTitle: { ...typography.subtitle, fontSize: 15 },
   input: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   inline: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
-  rowLabel: { flex: 1, fontSize: 14, color: colors.textPrimary, alignSelf: 'center' },
-  fieldLabel: { fontSize: 10, color: colors.textMuted, marginBottom: 2 },
+  rowLabel: { flex: 1, fontSize: 14, color: c.textPrimary, alignSelf: 'center' },
+  fieldLabel: { fontSize: 10, color: c.textMuted, marginBottom: 2 },
 });
+}

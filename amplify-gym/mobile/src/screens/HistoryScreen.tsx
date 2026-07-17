@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { listSessions } from '../api/endpoints';
@@ -13,7 +13,8 @@ import { useApp } from '../context/AppContext';
 import { formatWeight } from '../lib/formulas';
 import { useLoad } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
-import { colors, radius, spacing, TAB_BAR_SPACE } from '../theme';
+import { radius, spacing, TAB_BAR_SPACE, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<EntrenarStackParamList, 'History'>;
 
@@ -40,6 +41,8 @@ function sessionStats(session: WorkoutSession): { sets: number; volumeKg: number
 }
 
 export function HistoryScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user, unit } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listSessions(userId), [userId]);
@@ -56,14 +59,14 @@ export function HistoryScreen({ navigation }: Props) {
           right={
             <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
               <View style={styles.headerLink}>
-                <Ionicons name="close" size={22} color={colors.primary} />
+                <Ionicons name="close" size={22} color={c.primary} />
               </View>
             </Pressable>
           }
         />
 
         {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
-        {loading ? <ActivityIndicator color={colors.primary} style={{ margin: spacing.lg }} /> : null}
+        {loading ? <ActivityIndicator color={c.primary} style={{ margin: spacing.lg }} /> : null}
 
         <View style={styles.body}>
           {!loading && finished.length === 0 ? (
@@ -94,7 +97,7 @@ export function HistoryScreen({ navigation }: Props) {
                       {session.gym ? ` · ${session.gym.name}` : ''}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
                 </Card>
               </Pressable>
             );
@@ -105,8 +108,9 @@ export function HistoryScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.sm },
   headerLink: { flexDirection: 'row', alignItems: 'center' },
@@ -116,10 +120,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: radius.sm,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     alignItems: 'center',
   },
-  dateText: { fontSize: 12, fontWeight: '700', color: colors.primary },
-  name: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  meta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  dateText: { fontSize: 12, fontWeight: '700', color: c.primary },
+  name: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  meta: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 });
+}

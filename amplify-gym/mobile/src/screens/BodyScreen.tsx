@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createMetric, getRelativeStrength, listMetrics } from '../api/endpoints';
@@ -15,7 +15,8 @@ import { useApp } from '../context/AppContext';
 import { formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/formulas';
 import { errorMessage, useLoad } from '../lib/useLoad';
 import type { CuerpoStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<CuerpoStackParamList, 'Body'>;
 
@@ -25,6 +26,9 @@ function shortDate(iso: string): string {
 }
 
 export function BodyScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
+  const typography = useMemo(() => makeTypography(c), [c]);
   const { user, unit } = useApp();
   const userId = user?.id ?? '';
   const metrics = useLoad(() => listMetrics(userId), [userId]);
@@ -89,7 +93,7 @@ export function BodyScreen({ navigation }: Props) {
           right={
             <Pressable onPress={() => navigation.navigate('Recovery')} hitSlop={8}>
               <View style={styles.headerLink}>
-                <Ionicons name="moon-outline" size={17} color={colors.primary} />
+                <Ionicons name="moon-outline" size={17} color={c.primary} />
                 <Text style={styles.headerLinkText}>Recuperación</Text>
               </View>
             </Pressable>
@@ -121,7 +125,7 @@ export function BodyScreen({ navigation }: Props) {
 
           <Card>
             <Text style={styles.sectionTitle}>Evolución del peso corporal</Text>
-            {metrics.loading ? <ActivityIndicator color={colors.primary} /> : null}
+            {metrics.loading ? <ActivityIndicator color={c.primary} /> : null}
             {sorted.length > 0 ? (
               <LineChart
                 data={sorted.map((m) => ({ label: shortDate(m.date), value: toDisplayWeight(m.weightKg, unit) }))}
@@ -138,7 +142,7 @@ export function BodyScreen({ navigation }: Props) {
               Levantar 100 kg no significa lo mismo para todos: el mérito depende de tu peso
               corporal. Wilks y DOTS normalizan tu fuerza para poder compararla.
             </Text>
-            {relative.loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} /> : null}
+            {relative.loading ? <ActivityIndicator color={c.primary} style={{ marginTop: spacing.sm }} /> : null}
             {relative.error ? <Text style={typography.muted}>No se pudo cargar la fuerza relativa.</Text> : null}
             {relative.data ? (
               relative.data.lifts.length === 0 ? (
@@ -185,33 +189,36 @@ export function BodyScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   headerLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerLinkText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+  headerLinkText: { color: c.primary, fontWeight: '600', fontSize: 14 },
   sectionTitle: { ...typography.subtitle, marginBottom: 4 },
   fieldsRow: { flexDirection: 'row', gap: spacing.sm },
   field: { flex: 1 },
-  fieldLabel: { fontSize: 11, color: colors.textMuted, marginBottom: 4 },
-  formError: { color: colors.primaryDark, fontSize: 13, fontWeight: '600' },
-  explainer: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
+  fieldLabel: { fontSize: 11, color: c.textMuted, marginBottom: 4 },
+  formError: { color: c.primaryDark, fontSize: 13, fontWeight: '600' },
+  explainer: { fontSize: 12, color: c.textMuted, lineHeight: 18 },
   tableHeader: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceBorder,
+    borderBottomColor: c.surfaceBorder,
     paddingBottom: 6,
   },
-  th: { flex: 1, fontSize: 11, fontWeight: '700', color: colors.accent, textTransform: 'uppercase' },
+  th: { flex: 1, fontSize: 11, fontWeight: '700', color: c.accent, textTransform: 'uppercase' },
   tr: {
     flexDirection: 'row',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.ice,
+    borderBottomColor: c.ice,
     alignItems: 'center',
   },
-  td: { flex: 1, fontSize: 13, color: colors.textPrimary },
-  totalRow: { backgroundColor: colors.ice, borderRadius: 8, paddingHorizontal: 4 },
-  bw: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm },
+  td: { flex: 1, fontSize: 13, color: c.textPrimary },
+  totalRow: { backgroundColor: c.ice, borderRadius: 8, paddingHorizontal: 4 },
+  bw: { fontSize: 11, color: c.textMuted, marginTop: spacing.sm },
 });
+}

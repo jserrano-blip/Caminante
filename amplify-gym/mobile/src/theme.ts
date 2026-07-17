@@ -22,6 +22,33 @@ export const colors = {
   white: '#FFFFFF',
 } as const;
 
+export type ThemeColors = { readonly [K in keyof typeof colors]: string };
+
+/** Paleta clara (idéntica a `colors`). */
+export const lightColors: ThemeColors = colors;
+
+/** Paleta oscura — familia azul marino, sin grises puros ni negro. */
+export const darkColors: ThemeColors = {
+  navy900: '#050B20',
+  navy800: '#0A1330',
+  navy700: '#142B66',
+
+  primary: '#3B82F6',
+  accent: '#60A5FA',
+  sky: '#7FB5F7',
+  primaryDark: '#93C5FD',
+
+  background: '#0A1330',
+  surface: '#13224E',
+  ice: '#1B2F66',
+  iceBorder: '#28407D',
+  surfaceBorder: '#28407D',
+
+  textPrimary: '#E8EFFF',
+  textMuted: '#8FA9DC',
+  white: '#FFFFFF',
+};
+
 export const radius = {
   sm: 10,
   md: 16,
@@ -51,17 +78,22 @@ export const shadow = {
   },
 } as const;
 
-export const typography = {
-  title: { fontSize: 30, fontWeight: '800' as const, color: colors.textPrimary },
-  subtitle: { fontSize: 17, fontWeight: '600' as const, color: colors.textPrimary },
-  body: { fontSize: 15, fontWeight: '400' as const, color: colors.textPrimary },
-  muted: { fontSize: 13, fontWeight: '400' as const, color: colors.textMuted },
-  stat: { fontSize: 26, fontWeight: '700' as const, color: colors.primary },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: '700' as const,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase' as const,
-    color: colors.sky,
-  },
-} as const;
+/** Tipografía dependiente del tema. */
+export const makeTypography = (c: ThemeColors) =>
+  ({
+    title: { fontSize: 30, fontWeight: '800' as const, color: c.textPrimary },
+    subtitle: { fontSize: 17, fontWeight: '600' as const, color: c.textPrimary },
+    body: { fontSize: 15, fontWeight: '400' as const, color: c.textPrimary },
+    muted: { fontSize: 13, fontWeight: '400' as const, color: c.textMuted },
+    stat: { fontSize: 26, fontWeight: '700' as const, color: c.primary },
+    eyebrow: {
+      fontSize: 11,
+      fontWeight: '700' as const,
+      letterSpacing: 1.5,
+      textTransform: 'uppercase' as const,
+      color: c.sky,
+    },
+  }) as const;
+
+/** Fallback claro estático para archivos aún no migrados al ThemeContext. */
+export const typography = makeTypography(colors);

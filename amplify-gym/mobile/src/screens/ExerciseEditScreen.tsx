@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createExercise, deleteExercise, listExercises, updateExercise } from '../api/endpoints';
@@ -12,7 +12,8 @@ import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import type { RutinasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RutinasStackParamList, 'ExerciseEdit'>;
 
@@ -20,6 +21,8 @@ const GROUPS: MuscleGroup[] = ['PECHO', 'ESPALDA', 'PIERNA', 'HOMBRO', 'BRAZO', 
 const CATEGORIES: ExerciseCategory[] = ['BARBELL', 'DUMBBELL', 'MACHINE', 'CABLE', 'BODYWEIGHT'];
 
 export function ExerciseEditScreen({ navigation, route }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const existing = route.params?.exercise;
   const { user } = useApp();
   const userId = user?.id ?? '';
@@ -137,7 +140,7 @@ export function ExerciseEditScreen({ navigation, route }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Nombre"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={name}
             onChangeText={setName}
             editable={!readOnly}
@@ -180,7 +183,7 @@ export function ExerciseEditScreen({ navigation, route }: Props) {
           <TextInput
             style={[styles.input, { minHeight: 60 }]}
             placeholder="Notas (opcional)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={notes}
             onChangeText={setNotes}
             multiline
@@ -195,8 +198,8 @@ export function ExerciseEditScreen({ navigation, route }: Props) {
             <Switch
               value={isPowerlift}
               onValueChange={readOnly ? undefined : setIsPowerlift}
-              trackColor={{ true: colors.accent, false: colors.surfaceBorder }}
-              thumbColor={colors.white}
+              trackColor={{ true: c.accent, false: c.surfaceBorder }}
+              thumbColor={c.white}
               disabled={readOnly}
             />
           </View>
@@ -223,38 +226,41 @@ export function ExerciseEditScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   title: { ...typography.title, fontSize: 24 },
-  readOnlyNote: { fontSize: 13, color: colors.textPrimary, lineHeight: 19 },
+  readOnlyNote: { fontSize: 13, color: c.textPrimary, lineHeight: 19 },
   input: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
-  fieldLabel: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+  fieldLabel: { fontSize: 12, color: c.textMuted, marginTop: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   variantBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
   },
-  variantText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
-  variantPlaceholder: { fontSize: 14, color: colors.textMuted },
-  clearVariant: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  variantText: { fontSize: 14, color: c.textPrimary, fontWeight: '600' },
+  variantPlaceholder: { fontSize: 14, color: c.textMuted },
+  clearVariant: { color: c.primary, fontWeight: '600', fontSize: 13 },
   switchRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  switchLabel: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  switchHint: { fontSize: 11, color: colors.textMuted },
+  switchLabel: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
+  switchHint: { fontSize: 11, color: c.textMuted },
 });
+}

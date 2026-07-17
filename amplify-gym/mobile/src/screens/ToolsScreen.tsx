@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NumberInput } from '../components/NumberInput';
@@ -17,9 +17,12 @@ import {
   wilks,
   type Sex,
 } from '../lib/formulas';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function ToolsScreen() {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user, unit, gym } = useApp();
   const unitLabel = unit === 'LB' ? 'lb' : 'kg';
 
@@ -109,38 +112,41 @@ export function ToolsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
   row: { flexDirection: 'row', gap: spacing.md },
   field: { flex: 1 },
-  fieldLabel: { fontSize: 11, color: colors.textMuted, marginBottom: 4 },
+  fieldLabel: { fontSize: 11, color: c.textMuted, marginBottom: 4 },
   rmTable: { flexDirection: 'row', gap: spacing.sm, marginTop: 4 },
   rmCell: {
     flex: 1,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     borderRadius: radius.sm,
     alignItems: 'center',
     paddingVertical: 10,
   },
-  rmLabel: { fontSize: 11, fontWeight: '700', color: colors.accent },
-  rmValue: { fontSize: 18, fontWeight: '700', color: colors.primary, marginTop: 2 },
-  rmUnit: { fontSize: 10, color: colors.textMuted },
+  rmLabel: { fontSize: 11, fontWeight: '700', color: c.accent },
+  rmValue: { fontSize: 18, fontWeight: '700', color: c.primary, marginTop: 2 },
+  rmUnit: { fontSize: 10, color: c.textMuted },
   scoreRow: { flexDirection: 'row', gap: spacing.sm },
   scoreBox: {
     flex: 1,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     borderRadius: radius.sm,
     alignItems: 'center',
     paddingVertical: 12,
   },
-  scoreValue: { fontSize: 22, fontWeight: '700', color: colors.primary },
-  scoreLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  hint: { fontSize: 11, color: colors.textMuted },
+  scoreValue: { fontSize: 22, fontWeight: '700', color: c.primary },
+  scoreLabel: { fontSize: 11, color: c.textMuted, marginTop: 2 },
+  hint: { fontSize: 11, color: c.textMuted },
 });
+}

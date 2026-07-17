@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { testConnection } from '../api/client';
@@ -15,7 +15,8 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import { resetToProfileSelect } from '../navigation/rootNavigation';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const DATASETS: { key: ExportDataset; label: string }[] = [
   { key: 'sets', label: 'Series (todas)' },
@@ -27,6 +28,8 @@ const DATASETS: { key: ExportDataset; label: string }[] = [
 ];
 
 export function SettingsScreen() {
+  const { colors: c, mode, setMode } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user, setUser, unit, setUnit, baseUrl, setBaseUrl } = useApp();
 
   const [name, setName] = useState(user?.name ?? '');
@@ -127,7 +130,7 @@ export function SettingsScreen() {
               value={name}
               onChangeText={setName}
               placeholder="Nombre"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
             />
             <Text style={styles.fieldLabel}>Sexo (para Wilks/DOTS)</Text>
             <SegmentedControl
@@ -138,6 +141,19 @@ export function SettingsScreen() {
             />
             {profileMsg ? <Text style={styles.msg}>{profileMsg}</Text> : null}
             <Button title="Guardar perfil" onPress={saveProfile} loading={savingProfile} />
+          </Card>
+
+          <Card style={{ gap: spacing.sm }}>
+            <Text style={styles.sectionTitle}>Apariencia</Text>
+            <Text style={styles.hint}>
+              Con &quot;Sistema&quot; la app sigue el modo claro/oscuro del teléfono.
+            </Text>
+            <SegmentedControl
+              options={['light', 'dark', 'system'] as const}
+              labels={{ light: 'Claro', dark: 'Oscuro', system: 'Sistema' }}
+              value={mode}
+              onChange={setMode}
+            />
           </Card>
 
           <Card style={{ gap: spacing.sm }}>
@@ -161,7 +177,7 @@ export function SettingsScreen() {
               autoCorrect={false}
               keyboardType="url"
               placeholder="http://localhost:4000/api"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
             />
             {connMsg ? <Text style={styles.msg}>{connMsg}</Text> : null}
             <Button title="Guardar y probar conexión" onPress={saveAndTestUrl} loading={testing} />
@@ -188,7 +204,7 @@ export function SettingsScreen() {
 
           <Card style={{ gap: spacing.sm }}>
             <View style={styles.profileRow}>
-              <Ionicons name="people-outline" size={20} color={colors.primary} />
+              <Ionicons name="people-outline" size={20} color={c.primary} />
               <Text style={styles.profileText}>Perfil activo: {user?.name ?? '—'}</Text>
             </View>
             <Button
@@ -206,24 +222,27 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
-  hint: { fontSize: 12, color: colors.textMuted, lineHeight: 17 },
+  hint: { fontSize: 12, color: c.textMuted, lineHeight: 17 },
   input: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
-  fieldLabel: { fontSize: 12, color: colors.textMuted },
-  msg: { fontSize: 13, fontWeight: '600', color: colors.primary },
+  fieldLabel: { fontSize: 12, color: c.textMuted },
+  msg: { fontSize: 13, fontWeight: '600', color: c.primary },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  profileText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  profileText: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
 });
+}

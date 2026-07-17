@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
-import { colors } from '../theme';
+import { type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export interface BarPoint {
   label: string;
@@ -16,6 +17,8 @@ interface Props {
 
 /** Gráfica de barras ligera con SVG propio. Solo azules. */
 export function BarChart({ data, height = 140, formatValue }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const [width, setWidth] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
@@ -38,7 +41,7 @@ export function BarChart({ data, height = 140, formatValue }: Props) {
               y1={pad.top + innerH}
               x2={pad.left + innerW}
               y2={pad.top + innerH}
-              stroke={colors.surfaceBorder}
+              stroke={c.surfaceBorder}
               strokeWidth={1}
             />
             {data.map((d, i) => {
@@ -53,7 +56,7 @@ export function BarChart({ data, height = 140, formatValue }: Props) {
                   width={barW}
                   height={Math.max(h, d.value > 0 ? 2 : 0)}
                   rx={4}
-                  fill={i === data.length - 1 ? colors.primary : colors.accent}
+                  fill={i === data.length - 1 ? c.primary : c.accent}
                   opacity={i === data.length - 1 ? 1 : 0.75}
                 />
               );
@@ -73,7 +76,8 @@ export function BarChart({ data, height = 140, formatValue }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   labels: {
     position: 'absolute',
     bottom: 2,
@@ -81,6 +85,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
   },
-  label: { fontSize: 9, color: colors.textMuted, textAlign: 'center' },
-  max: { position: 'absolute', top: 0, right: 8, fontSize: 10, color: colors.textMuted },
+  label: { fontSize: 9, color: c.textMuted, textAlign: 'center' },
+  max: { position: 'absolute', top: 0, right: 8, fontSize: 10, color: c.textMuted },
 });
+}

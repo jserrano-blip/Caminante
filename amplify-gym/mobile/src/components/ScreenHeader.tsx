@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '../theme';
+import { spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   title: string;
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export function ScreenHeader({ title, subtitle, eyebrow, right }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <View style={styles.container}>
       <View style={styles.texts}>
@@ -23,7 +26,9 @@ export function ScreenHeader({ title, subtitle, eyebrow, right }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -35,5 +40,6 @@ const styles = StyleSheet.create({
   texts: { flex: 1 },
   eyebrow: { ...typography.eyebrow, marginBottom: 4 },
   title: typography.title,
-  subtitle: { ...typography.muted, marginTop: 2, color: colors.textMuted },
+  subtitle: { ...typography.muted, marginTop: 2, color: c.textMuted },
 });
+}

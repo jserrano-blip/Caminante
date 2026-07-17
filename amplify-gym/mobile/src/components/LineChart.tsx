@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';
-import { colors } from '../theme';
+import { type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export interface LinePoint {
   label: string;
@@ -17,6 +18,8 @@ interface Props {
 
 /** Gráfica de línea ligera con SVG propio. Solo azules. */
 export function LineChart({ data, height = 140, formatValue }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const [width, setWidth] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
@@ -46,21 +49,21 @@ export function LineChart({ data, height = 140, formatValue }: Props) {
               y1={pad.top + innerH}
               x2={pad.left + innerW}
               y2={pad.top + innerH}
-              stroke={colors.surfaceBorder}
+              stroke={c.surfaceBorder}
               strokeWidth={1}
             />
             {points.length > 1 ? (
               <Polyline
                 points={points.map((p) => `${p.x},${p.y}`).join(' ')}
                 fill="none"
-                stroke={colors.accent}
+                stroke={c.accent}
                 strokeWidth={2.5}
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
             ) : null}
             {points.map((p, i) => (
-              <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill={colors.primary} />
+              <Circle key={i} cx={p.x} cy={p.y} r={3.5} fill={c.primary} />
             ))}
           </Svg>
           <View style={styles.labels}>
@@ -77,7 +80,8 @@ export function LineChart({ data, height = 140, formatValue }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   labels: {
     position: 'absolute',
     bottom: 2,
@@ -86,7 +90,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  label: { fontSize: 10, color: colors.textMuted },
+  label: { fontSize: 10, color: c.textMuted },
   minMax: { position: 'absolute', top: 0, right: 8, alignItems: 'flex-end' },
-  minMaxText: { fontSize: 10, color: colors.textMuted },
+  minMaxText: { fontSize: 10, color: c.textMuted },
 });
+}

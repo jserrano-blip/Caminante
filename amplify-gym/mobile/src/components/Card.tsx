@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius, shadow, spacing } from '../theme';
+import { radius, shadow, spacing, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   children: React.ReactNode;
@@ -13,10 +14,12 @@ interface Props {
 }
 
 export function Card({ children, style, tinted, variant = 'default' }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   if (variant === 'hero') {
     return (
       <LinearGradient
-        colors={[colors.navy800, colors.primary]}
+        colors={[c.navy800, c.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1.2 }}
         style={[styles.card, styles.hero, style]}
@@ -28,19 +31,21 @@ export function Card({ children, style, tinted, variant = 'default' }: Props) {
   return <View style={[styles.card, tinted && styles.tinted, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.iceBorder,
+    borderColor: c.iceBorder,
     padding: spacing.md,
     ...shadow.soft,
   },
   tinted: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
   },
   hero: {
     borderWidth: 0,
   },
 });
+}

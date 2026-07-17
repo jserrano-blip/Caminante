@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, shadow, spacing } from '../theme';
+import { radius, shadow, spacing, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   /** Segundos iniciales; cambia la key del componente para reiniciar. */
@@ -19,6 +20,8 @@ function fmt(total: number): string {
 
 /** Cronómetro de descanso flotante: cuenta regresiva con +30s / −30s. */
 export function RestTimer({ seconds, onDone, onDismiss }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const [remaining, setRemaining] = useState(seconds);
   const doneRef = useRef(false);
 
@@ -48,7 +51,7 @@ export function RestTimer({ seconds, onDone, onDismiss }: Props) {
 
   return (
     <LinearGradient
-      colors={finished ? [colors.navy900, colors.navy700] : [colors.navy800, colors.primary]}
+      colors={finished ? [c.navy900, c.navy700] : [c.navy800, c.primary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.container}
@@ -57,26 +60,27 @@ export function RestTimer({ seconds, onDone, onDismiss }: Props) {
         <Text style={styles.adjustText}>−30s</Text>
       </Pressable>
       <View style={styles.center}>
-        <Ionicons name="timer-outline" size={20} color={colors.sky} />
+        <Ionicons name="timer-outline" size={20} color={c.sky} />
         <Text style={styles.time}>{finished ? '¡Listo!' : fmt(remaining)}</Text>
       </View>
       <Pressable onPress={() => setRemaining((r) => r + 30)} hitSlop={8} style={styles.adjust}>
         <Text style={styles.adjustText}>+30s</Text>
       </Pressable>
       <Pressable onPress={onDismiss} hitSlop={8} style={styles.close}>
-        <Ionicons name="close" size={20} color={colors.white} />
+        <Ionicons name="close" size={20} color={c.white} />
       </Pressable>
     </LinearGradient>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 100,
     left: spacing.md,
     right: spacing.md,
-    backgroundColor: colors.navy800,
+    backgroundColor: c.navy800,
     borderRadius: radius.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -92,8 +96,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: 'rgba(255,255,255,0.16)',
   },
-  adjustText: { color: colors.white, fontWeight: '700', fontSize: 13 },
+  adjustText: { color: c.white, fontWeight: '700', fontSize: 13 },
   center: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  time: { color: colors.white, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  time: { color: c.white, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] },
   close: { marginLeft: 6 },
 });
+}

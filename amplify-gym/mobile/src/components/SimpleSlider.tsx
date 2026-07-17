@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { PanResponder, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
-import { colors, radius } from '../theme';
+import { radius, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   value: number;
@@ -15,6 +16,8 @@ interface Props {
 
 /** Slider sencillo propio (sin dependencias), arrastrable y con taps en la pista. */
 export function SimpleSlider({ value, onChange, min, max, step = 1, label, format }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const [width, setWidth] = useState(0);
   const widthRef = useRef(0);
   const valueRef = useRef(value);
@@ -72,37 +75,39 @@ export function SimpleSlider({ value, onChange, min, max, step = 1, label, forma
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
   container: { marginVertical: 6 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  label: { fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
-  value: { fontSize: 14, color: colors.primary, fontWeight: '700' },
+  label: { fontSize: 14, color: c.textPrimary, fontWeight: '500' },
+  value: { fontSize: 14, color: c.primary, fontWeight: '700' },
   trackWrap: { height: 36, justifyContent: 'center' },
   track: {
     height: 6,
     borderRadius: radius.full,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
   },
   fill: {
     position: 'absolute',
     height: 6,
     borderRadius: radius.full,
-    backgroundColor: colors.accent,
+    backgroundColor: c.accent,
   },
   thumb: {
     position: 'absolute',
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
     borderWidth: 3,
-    borderColor: colors.white,
-    shadowColor: colors.primaryDark,
+    borderColor: c.white,
+    shadowColor: c.navy900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
   },
 });
+}

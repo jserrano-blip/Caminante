@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { deleteMeal, listMeals } from '../api/endpoints';
@@ -15,7 +15,8 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { useApp } from '../context/AppContext';
 import { useLoad } from '../lib/useLoad';
 import type { MasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'Nutrition'>;
 
@@ -51,6 +52,8 @@ function macroTargets(opts: {
 }
 
 function MacroPill({ label, value }: { label: string; value: number }) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   return (
     <View style={styles.macroPill}>
       <Text style={styles.macroValue}>{Math.round(value)}</Text>
@@ -60,6 +63,8 @@ function MacroPill({ label, value }: { label: string; value: number }) {
 }
 
 export function NutritionScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listMeals(userId), [userId]);
@@ -124,16 +129,16 @@ export function NutritionScreen({ navigation }: Props) {
             hitSlop={8}
             style={styles.actionBtn}
           >
-            <Ionicons name="copy-outline" size={18} color={colors.primary} />
+            <Ionicons name="copy-outline" size={18} color={c.primary} />
             <Text style={styles.actionText}>Duplicar</Text>
           </Pressable>
         ) : (
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
             <Pressable onPress={() => navigation.navigate('MealEdit', { meal })} hitSlop={8}>
-              <Ionicons name="create-outline" size={20} color={colors.primary} />
+              <Ionicons name="create-outline" size={20} color={c.primary} />
             </Pressable>
             <Pressable onPress={() => confirmDelete(meal)} hitSlop={8}>
-              <Ionicons name="trash-outline" size={20} color={colors.textMuted} />
+              <Ionicons name="trash-outline" size={20} color={c.textMuted} />
             </Pressable>
           </View>
         )}
@@ -149,7 +154,7 @@ export function NutritionScreen({ navigation }: Props) {
 
       {meal.applianceNote ? (
         <View style={styles.applianceRow}>
-          <Ionicons name="timer-outline" size={15} color={colors.accent} />
+          <Ionicons name="timer-outline" size={15} color={c.accent} />
           <Text style={styles.applianceText}>{meal.applianceNote}</Text>
         </View>
       ) : null}
@@ -162,7 +167,7 @@ export function NutritionScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenHeader title="Meal Prep" subtitle="Recetas con macros y olla de presión" />
         {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
-        {loading ? <ActivityIndicator color={colors.primary} style={{ margin: spacing.lg }} /> : null}
+        {loading ? <ActivityIndicator color={c.primary} style={{ margin: spacing.lg }} /> : null}
 
         <View style={styles.body}>
           <Button title="＋ Nueva receta" onPress={() => navigation.navigate('MealEdit', {})} />
@@ -170,13 +175,13 @@ export function NutritionScreen({ navigation }: Props) {
           <Card tinted style={{ gap: spacing.sm }}>
             <Pressable onPress={() => setCalcOpen((v) => !v)} style={styles.calcHeader}>
               <View style={styles.calcBubble}>
-                <Ionicons name="calculator-outline" size={18} color={colors.primary} />
+                <Ionicons name="calculator-outline" size={18} color={c.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.mealName}>Calculadora de macros</Text>
                 <Text style={styles.mealMeta}>TDEE Mifflin-St Jeor según tu objetivo</Text>
               </View>
-              <Ionicons name={calcOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+              <Ionicons name={calcOpen ? 'chevron-up' : 'chevron-down'} size={18} color={c.textMuted} />
             </Pressable>
 
             {calcOpen ? (
@@ -230,42 +235,45 @@ export function NutritionScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle },
   mealHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  mealName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  mealMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  mealName: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
+  mealMeta: { fontSize: 12, color: c.textMuted, marginTop: 2 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  actionText: { color: c.primary, fontWeight: '600', fontSize: 13 },
   macros: { flexDirection: 'row', gap: spacing.sm },
   macroPill: {
     flex: 1,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     alignItems: 'center',
     paddingVertical: 8,
   },
-  macroValue: { fontSize: 16, fontWeight: '700', color: colors.primary },
-  macroLabel: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
-  perServing: { fontSize: 10, color: colors.textMuted, marginTop: -4 },
+  macroValue: { fontSize: 16, fontWeight: '700', color: c.primary },
+  macroLabel: { fontSize: 10, color: c.textMuted, marginTop: 1 },
+  perServing: { fontSize: 10, color: c.textMuted, marginTop: -4 },
   calcHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   calcBubble: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   calcInputs: { flexDirection: 'row', gap: spacing.sm },
   calcField: { flex: 1 },
-  calcLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 4, marginBottom: 2 },
+  calcLabel: { fontSize: 12, fontWeight: '600', color: c.textMuted, marginTop: 4, marginBottom: 2 },
   applianceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  applianceText: { flex: 1, fontSize: 12, color: colors.accent, fontWeight: '500' },
-  instructions: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
+  applianceText: { flex: 1, fontSize: 12, color: c.accent, fontWeight: '500' },
+  instructions: { fontSize: 12, color: c.textMuted, lineHeight: 18 },
 });
+}

@@ -18,7 +18,8 @@ import { StatTile } from '../components/StatTile';
 import { useApp } from '../context/AppContext';
 import { formatWeight, toDisplayWeight } from '../lib/formulas';
 import { errorMessage, useLoad } from '../lib/useLoad';
-import { colors, radius, spacing, TAB_BAR_SPACE, typography } from '../theme';
+import { radius, spacing, TAB_BAR_SPACE, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 function shortDate(iso: string): string {
   const d = new Date(iso);
@@ -89,6 +90,9 @@ function favoriteExerciseId(data: DashboardResponse): { id: string; name: string
 }
 
 export function DashboardScreen() {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
+  const typography = useMemo(() => makeTypography(c), [c]);
   const { user, unit } = useApp();
   const isFocused = useIsFocused();
   const userId = user?.id ?? '';
@@ -135,10 +139,10 @@ export function DashboardScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={reload} tintColor={colors.white} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={reload} tintColor={c.white} />}
       >
         <LinearGradient
-          colors={[colors.navy800, colors.primary]}
+          colors={[c.navy800, c.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0.9, y: 1.1 }}
           style={styles.hero}
@@ -150,7 +154,7 @@ export function DashboardScreen() {
               <Text style={styles.heroSub}>Tu progreso de un vistazo</Text>
             </View>
             <View style={styles.heroBubble}>
-              <Ionicons name={hello.icon} size={22} color={colors.white} />
+              <Ionicons name={hello.icon} size={22} color={c.white} />
             </View>
           </View>
 
@@ -178,7 +182,7 @@ export function DashboardScreen() {
 
         <View style={styles.body}>
           {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
-          {loading ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.xl }} /> : null}
+          {loading ? <ActivityIndicator color={c.primary} style={{ marginVertical: spacing.xl }} /> : null}
 
           {data ? (
             <>
@@ -210,7 +214,7 @@ export function DashboardScreen() {
                       formatValue={(v) => `${v} ${unit === 'LB' ? 'lb' : 'kg'}`}
                     />
                   ) : strength.loading ? (
-                    <ActivityIndicator color={colors.primary} />
+                    <ActivityIndicator color={c.primary} />
                   ) : (
                     <Text style={styles.mutedText}>Aún no hay datos de fuerza para este ejercicio.</Text>
                   )}
@@ -226,7 +230,7 @@ export function DashboardScreen() {
                   data.recentRecords.slice(0, 5).map((rec) => (
                     <View key={rec.id} style={styles.recordRow}>
                       <View style={styles.recordBubble}>
-                        <Ionicons name="trophy" size={16} color={colors.primary} />
+                        <Ionicons name="trophy" size={16} color={c.primary} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.recordName}>{rec.exercise?.name ?? 'Ejercicio'}</Text>
@@ -262,10 +266,12 @@ export function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
   // el área segura comparte el color superior del hero para un look full-bleed
-  safe: { flex: 1, backgroundColor: colors.navy800 },
-  scroll: { backgroundColor: colors.background },
+  safe: { flex: 1, backgroundColor: c.navy800 },
+  scroll: { backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   hero: {
     paddingHorizontal: spacing.md,
@@ -276,7 +282,7 @@ const styles = StyleSheet.create({
   },
   heroTop: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
   heroEyebrow: { ...typography.eyebrow, color: 'rgba(255,255,255,0.65)' },
-  heroTitle: { fontSize: 30, fontWeight: '800', color: colors.white, marginTop: 2 },
+  heroTitle: { fontSize: 30, fontWeight: '800', color: c.white, marginTop: 2 },
   heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   heroBubble: {
     width: 44,
@@ -298,18 +304,19 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.ice,
+    borderBottomColor: c.ice,
   },
   recordBubble: {
     width: 34,
     height: 34,
     borderRadius: radius.full,
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  recordName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  recordMeta: { fontSize: 11, color: colors.textMuted },
-  recordValue: { fontSize: 15, fontWeight: '700', color: colors.primary },
-  checkinError: { color: colors.primaryDark, fontSize: 13, fontWeight: '600', marginTop: 4 },
+  recordName: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
+  recordMeta: { fontSize: 11, color: c.textMuted },
+  recordValue: { fontSize: 15, fontWeight: '700', color: c.primary },
+  checkinError: { color: c.primaryDark, fontSize: 13, fontWeight: '600', marginTop: 4 },
 });
+}

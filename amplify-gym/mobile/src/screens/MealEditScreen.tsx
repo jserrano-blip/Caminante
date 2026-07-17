@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createMeal, updateMeal } from '../api/endpoints';
@@ -10,11 +10,14 @@ import { NumberInput } from '../components/NumberInput';
 import { useApp } from '../context/AppContext';
 import { errorMessage } from '../lib/useLoad';
 import type { MasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, radius, spacing, typography } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<MasStackParamList, 'MealEdit'>;
 
 export function MealEditScreen({ navigation, route }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const existing = route.params?.meal;
   const template = route.params?.duplicateFrom;
   const base = existing ?? template;
@@ -75,7 +78,7 @@ export function MealEditScreen({ navigation, route }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Nombre (ej. Pechuga de pollo)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={name}
             onChangeText={setName}
           />
@@ -120,14 +123,14 @@ export function MealEditScreen({ navigation, route }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Nota de olla de presión (ej. 10 min alta presión + 5 NPR)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={applianceNote}
             onChangeText={setApplianceNote}
           />
           <TextInput
             style={[styles.input, { minHeight: 90 }]}
             placeholder="Instrucciones y notas"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             value={instructions}
             onChangeText={setInstructions}
             multiline
@@ -140,22 +143,25 @@ export function MealEditScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
   title: { ...typography.title, fontSize: 24 },
   sectionTitle: { ...typography.subtitle, fontSize: 15 },
   input: {
-    backgroundColor: colors.ice,
+    backgroundColor: c.ice,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   row: { flexDirection: 'row', gap: spacing.md },
   field: { flex: 1 },
-  fieldLabel: { fontSize: 11, color: colors.textMuted, marginBottom: 4 },
+  fieldLabel: { fontSize: 11, color: c.textMuted, marginBottom: 4 },
 });
+}

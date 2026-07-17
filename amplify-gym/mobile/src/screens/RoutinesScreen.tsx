@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createRoutine, deleteRoutine, listExercises, listRoutines } from '../api/endpoints';
@@ -13,7 +13,8 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
 import { useLoad } from '../lib/useLoad';
 import type { RutinasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, colors, spacing } from '../theme';
+import { TAB_BAR_SPACE, spacing, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RutinasStackParamList, 'Routines'>;
 
@@ -116,6 +117,8 @@ const SUGGESTED_TEMPLATES: SuggestedTemplate[] = [
 ];
 
 export function RoutinesScreen({ navigation }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
   const { user } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listRoutines(userId), [userId]);
@@ -183,7 +186,7 @@ export function RoutinesScreen({ navigation }: Props) {
           right={
             <Pressable onPress={() => navigation.navigate('Exercises')} hitSlop={8}>
               <View style={styles.headerLink}>
-                <Ionicons name="library-outline" size={18} color={colors.primary} />
+                <Ionicons name="library-outline" size={18} color={c.primary} />
                 <Text style={styles.headerLinkText}>Ejercicios</Text>
               </View>
             </Pressable>
@@ -191,7 +194,7 @@ export function RoutinesScreen({ navigation }: Props) {
         />
 
         {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
-        {loading ? <ActivityIndicator color={colors.primary} style={{ margin: spacing.lg }} /> : null}
+        {loading ? <ActivityIndicator color={c.primary} style={{ margin: spacing.lg }} /> : null}
 
         <View style={styles.body}>
           {data && data.length === 0 ? (
@@ -207,16 +210,16 @@ export function RoutinesScreen({ navigation }: Props) {
                 <Pressable key={template.key} onPress={() => createTemplate(template)} disabled={!!creatingTemplate}>
                   <Card tinted style={styles.templateCard}>
                     <View style={styles.templateBubble}>
-                      <Ionicons name={template.icon} size={20} color={colors.primary} />
+                      <Ionicons name={template.icon} size={20} color={c.primary} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.name}>{template.title}</Text>
                       <Text style={styles.desc}>{template.description}</Text>
                     </View>
                     {creatingTemplate === template.key ? (
-                      <ActivityIndicator color={colors.primary} />
+                      <ActivityIndicator color={c.primary} />
                     ) : (
-                      <Ionicons name="add-circle" size={28} color={colors.primary} />
+                      <Ionicons name="add-circle" size={28} color={c.primary} />
                     )}
                   </Card>
                 </Pressable>
@@ -239,7 +242,7 @@ export function RoutinesScreen({ navigation }: Props) {
                   </Text>
                 </View>
                 <Pressable onPress={() => confirmDelete(routine.id, routine.name)} hitSlop={8}>
-                  <Ionicons name="trash-outline" size={20} color={colors.textMuted} />
+                  <Ionicons name="trash-outline" size={20} color={c.textMuted} />
                 </Pressable>
               </Card>
             </Pressable>
@@ -252,18 +255,19 @@ export function RoutinesScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const createStyles = (c: ThemeColors) => {
+  return StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
   headerLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerLinkText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+  headerLinkText: { color: c.primary, fontWeight: '600', fontSize: 14 },
   routineCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   templatesEyebrow: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
-    color: colors.sky,
+    color: c.sky,
     marginTop: spacing.sm,
   },
   templateCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -271,11 +275,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  desc: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  exercises: { fontSize: 12, color: colors.accent, marginTop: 6 },
+  name: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
+  desc: { fontSize: 13, color: c.textMuted, marginTop: 2 },
+  exercises: { fontSize: 12, color: c.accent, marginTop: 6 },
 });
+}
