@@ -1,0 +1,423 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { createRecovery, getDashboard, getReadiness, getStrengthAnalytics, listExercises } from '../api/endpoints';
+import type { DashboardResponse, Exercise } from '../api/types';
+import { ExercisePickerModal } from '../components/ExercisePickerModal';
+import { BarChart } from '../components/BarChart';
+import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { ErrorBanner } from '../components/ErrorBanner';
+import { LineChart } from '../components/LineChart';
+import { SimpleSlider } from '../components/SimpleSlider';
+import { StatTile } from '../components/StatTile';
+import { useApp } from '../context/AppContext';
+import { formatWeight, toDisplayWeight } from '../lib/formulas';
+import { errorMessage, useLoad } from '../lib/useLoad';
+import { radius, spacing, TAB_BAR_SPACE, makeTypography, type ThemeColors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+
+function shortDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+function greeting(): { text: string; icon: keyof typeof Ionicons.glyphMap } {
+  const h = new Date().getHours();
+  if (h < 12) return { text: 'Buenos días', icon: 'sunny' };
+  if (h < 19) return { text: 'Buenas tardes', icon: 'partly-sunny' };
+  return { text: 'Buenas noches', icon: 'moon' };
+}
+
+/** Semanas consecutivas con al menos una sesión, terminando en la semana actual o la anterior. */
+function weeklyStreak(weeks: { weekStart: string; sessions: number }[]): number {
+  const WEEK = 7 * 24 * 3600 * 1000;
+  const active = weeks
+    .filter((w) => w.sessions > 0)
+    .map((w) => new Date(w.weekStart).getTime())
+    .sort((a, b) => b - a);
+  if (active.length === 0) return 0;
+  if (Date.now() - active[0] > 2 * WEEK) return 0;
+  let streak = 1;
+  for (let i = 1; i < active.length; i++) {
+    // tolerancia de un día por husos horarios / alineación de semana
+    if (active[i - 1] - active[i] <= WEEK + 24 * 3600 * 1000) streak += 1;
+    else break;
+  }
+  return streak;
+}
+
+const CHART_EX_ID_KEY = 'amplify.chartExerciseId';
+const CHART_EX_NAME_KEY = 'amplify.chartExerciseName';
+
+const RECORD_LABEL: Record<string, string> = {
+  WEIGHT: 'Peso máximo',
+  E1RM: '1RM estimado',
+  VOLUME: 'Volumen',
+  REPS: 'Reps',
+};
+
+/** Ejercicio "favorito": el más usado en la última sesión, o el del PR más reciente. */
+function favoriteExerciseId(data: DashboardResponse): { id: string; name: string } | null {
+  const sets = data.lastSession?.sets ?? [];
+  if (sets.length > 0) {
+    const counts = new Map<string, { count: number; name: string }>();
+    for (const s of sets) {
+      const entry = counts.get(s.exerciseId) ?? { count: 0, name: s.exercise?.name ?? 'Ejercicio' };
+      entry.count += 1;
+      counts.set(s.exerciseId, entry);
+    }
+    let best: { id: string; name: string; count: number } | null = null;
+    for (const [id, v] of counts) {
+      if (!best || v.count > best.count) best = { id, name: v.name, count: v.count };
+    }
+    if (best) return { id: best.id, name: best.name };
+  }
+  const rec = data.recentRecords[0];
+  if (rec?.exercise) return { id: rec.exerciseId, name: rec.exercise.name };
+  return null;
+}
+
+export function DashboardScreen() {
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createStyles(c), [c]);
+  const typography = useMemo(() => makeTypography(c), [c]);
+  const { user, unit } = useApp();
+  const isFocused = useIsFocused();
+  const userId = user?.id ?? '';
+  const { data, loading, error, reload } = useLoad(() => getDashboard(userId), [userId]);
+  const readiness = useLoad(() => getReadiness(userId), [userId]);
+
+  const favorite = useMemo(() => (data ? favoriteExerciseId(data) : null), [data]);
+
+  // ejercicio elegido para la gráfica de fuerza (persistido); default: favorito
+  const [chartExercise, setChartExercise] = useState<{ id: string; name: string } | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [catalog, setCatalog] = useState<Exercise[] | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [id, name] = await Promise.all([
+          AsyncStorage.getItem(CHART_EX_ID_KEY),
+          AsyncStorage.getItem(CHART_EX_NAME_KEY),
+        ]);
+        if (id && name) setChartExercise({ id, name });
+      } catch {
+        // se queda el favorito
+      }
+    })();
+  }, []);
+
+  const chartTarget = chartExercise ?? favorite;
+  const strength = useLoad(
+    () => (chartTarget ? getStrengthAnalytics(userId, chartTarget.id) : Promise.resolve(null)),
+    [userId, chartTarget?.id]
+  );
+
+  const openChartPicker = () => {
+    setPickerVisible(true);
+    if (catalog === null) {
+      // catálogo lazy: se carga la primera vez que se abre el selector
+      listExercises(userId)
+        .then(setCatalog)
+        .catch(() => setCatalog([]));
+    }
+  };
+
+  const selectChartExercise = (exercise: Exercise) => {
+    setPickerVisible(false);
+    setChartExercise({ id: exercise.id, name: exercise.name });
+    void AsyncStorage.setItem(CHART_EX_ID_KEY, exercise.id);
+    void AsyncStorage.setItem(CHART_EX_NAME_KEY, exercise.name);
+  };
+
+  // check-in rápido de recuperación
+  const [sleep, setSleep] = useState(7.5);
+  const [soreness, setSoreness] = useState(3);
+  const [fatigue, setFatigue] = useState(3);
+  const [savingCheckin, setSavingCheckin] = useState(false);
+  const [checkinDone, setCheckinDone] = useState(false);
+  const [checkinError, setCheckinError] = useState<string | null>(null);
+
+  const hasTodayRecovery =
+    checkinDone || (data?.recoveryTrend ?? []).some((r) => isToday(r.date));
+
+  const saveCheckin = async () => {
+    setSavingCheckin(true);
+    setCheckinError(null);
+    try {
+      await createRecovery({ userId, sleepHours: sleep, soreness, fatigue });
+      setCheckinDone(true);
+    } catch (err) {
+      setCheckinError(errorMessage(err));
+    } finally {
+      setSavingCheckin(false);
+    }
+  };
+
+  const thisWeek = data?.weeklyVolume[data.weeklyVolume.length - 1];
+  const lastWeight = data?.bodyWeightTrend[data.bodyWeightTrend.length - 1];
+  const streak = data ? weeklyStreak(data.weeklyVolume) : 0;
+  const hello = greeting();
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {isFocused ? <StatusBar style="light" /> : null}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={reload} tintColor={c.white} />}
+      >
+        <LinearGradient
+          colors={[c.navy800, c.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.9, y: 1.1 }}
+          style={styles.hero}
+        >
+          <View style={styles.heroTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroEyebrow}>{hello.text.toUpperCase()}</Text>
+              <Text style={styles.heroTitle}>{user?.name ?? ''}</Text>
+              <Text style={styles.heroSub}>Tu progreso de un vistazo</Text>
+            </View>
+            <View style={styles.heroBubble}>
+              <Ionicons name={hello.icon} size={22} color={c.white} />
+            </View>
+          </View>
+
+          <View style={styles.tiles}>
+            <StatTile
+              variant="hero"
+              icon="barbell-outline"
+              label="Volumen semana"
+              value={thisWeek ? formatWeight(thisWeek.volumeKg, unit) : '—'}
+            />
+            <StatTile
+              variant="hero"
+              icon="flame-outline"
+              label="Racha"
+              value={streak > 0 ? `${streak} sem` : '—'}
+            />
+            <StatTile
+              variant="hero"
+              icon="body-outline"
+              label="Peso corporal"
+              value={lastWeight ? formatWeight(lastWeight.weightKg, unit) : '—'}
+            />
+          </View>
+        </LinearGradient>
+
+        <View style={styles.body}>
+          {readiness.data && readiness.data.hasData && readiness.data.level !== 'OK' ? (
+            <Card
+              tinted={readiness.data.level === 'CUIDADO'}
+              variant={readiness.data.level === 'DELOAD' ? 'hero' : 'default'}
+            >
+              <Text
+                style={[
+                  typography.eyebrow,
+                  readiness.data.level === 'DELOAD' && styles.readinessEyebrowHero,
+                ]}
+              >
+                RECUPERACIÓN INTELIGENTE
+              </Text>
+              <View style={styles.readinessRow}>
+                <Ionicons
+                  name="pulse-outline"
+                  size={24}
+                  color={readiness.data.level === 'DELOAD' ? c.white : c.primary}
+                />
+                <Text
+                  style={[
+                    styles.readinessScore,
+                    readiness.data.level === 'DELOAD' && styles.readinessWhite,
+                  ]}
+                >
+                  Readiness {readiness.data.score}/100
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.readinessRec,
+                  readiness.data.level === 'DELOAD' && styles.readinessRecHero,
+                ]}
+              >
+                {readiness.data.recommendation}
+              </Text>
+            </Card>
+          ) : null}
+
+          {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
+          {loading ? <ActivityIndicator color={c.primary} style={{ marginVertical: spacing.xl }} /> : null}
+
+          {data ? (
+            <>
+              <Card>
+                <Text style={typography.eyebrow}>PROGRESO</Text>
+                <Text style={styles.sectionTitle}>Volumen semanal</Text>
+                {data.weeklyVolume.length > 0 ? (
+                  <BarChart
+                    data={data.weeklyVolume.map((w) => ({
+                      label: shortDate(w.weekStart),
+                      value: toDisplayWeight(w.volumeKg, unit),
+                    }))}
+                  />
+                ) : (
+                  <EmptyState icon="bar-chart-outline" title="Sin entrenamientos todavía" subtitle="Tu volumen aparecerá aquí" />
+                )}
+              </Card>
+
+              {chartTarget ? (
+                <Card>
+                  <Text style={typography.eyebrow}>FUERZA</Text>
+                  <Pressable onPress={openChartPicker} style={styles.chartTitleRow} hitSlop={4}>
+                    <Text style={styles.sectionTitle}>e1RM · {chartTarget.name}</Text>
+                    <Ionicons name="chevron-down" size={16} color={c.textMuted} />
+                  </Pressable>
+                  {strength.data && strength.data.points.length > 0 ? (
+                    <LineChart
+                      data={strength.data.points.map((p) => ({
+                        label: shortDate(p.date),
+                        value: toDisplayWeight(p.e1rmKg, unit),
+                      }))}
+                      formatValue={(v) => `${v} ${unit === 'LB' ? 'lb' : 'kg'}`}
+                    />
+                  ) : strength.loading ? (
+                    <ActivityIndicator color={c.primary} />
+                  ) : (
+                    <Text style={styles.mutedText}>Aún no hay datos de fuerza para este ejercicio.</Text>
+                  )}
+                </Card>
+              ) : null}
+
+              <Card>
+                <Text style={typography.eyebrow}>LOGROS</Text>
+                <Text style={styles.sectionTitle}>PRs recientes</Text>
+                {data.recentRecords.length === 0 ? (
+                  <Text style={styles.mutedText}>Tus récords aparecerán aquí al finalizar sesiones.</Text>
+                ) : (
+                  data.recentRecords.slice(0, 5).map((rec) => (
+                    <View key={rec.id} style={styles.recordRow}>
+                      <View style={styles.recordBubble}>
+                        <Ionicons name="trophy" size={16} color={c.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.recordName}>{rec.exercise?.name ?? 'Ejercicio'}</Text>
+                        <Text style={styles.recordMeta}>
+                          {RECORD_LABEL[rec.type] ?? rec.type} · {shortDate(rec.date)}
+                        </Text>
+                      </View>
+                      <Text style={styles.recordValue}>
+                        {rec.type === 'REPS' ? `${rec.value} reps` : formatWeight(rec.value, unit)}
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </Card>
+
+              {!hasTodayRecovery ? (
+                <Card tinted>
+                  <Text style={typography.eyebrow}>RECUPERACIÓN</Text>
+                  <Text style={styles.sectionTitle}>Check-in de hoy</Text>
+                  <Text style={styles.mutedText}>Hoy aún no registras cómo te sientes.</Text>
+                  <SimpleSlider label="Horas de sueño" value={sleep} onChange={setSleep} min={0} max={12} step={0.5} format={(v) => `${v} h`} />
+                  <SimpleSlider label="Dolor muscular" value={soreness} onChange={setSoreness} min={1} max={10} />
+                  <SimpleSlider label="Fatiga" value={fatigue} onChange={setFatigue} min={1} max={10} />
+                  {checkinError ? <Text style={styles.checkinError}>{checkinError}</Text> : null}
+                  <Button title="Guardar check-in" onPress={saveCheckin} loading={savingCheckin} style={{ marginTop: spacing.sm }} />
+                </Card>
+              ) : null}
+            </>
+          ) : null}
+        </View>
+      </ScrollView>
+
+      <ExercisePickerModal
+        visible={pickerVisible}
+        exercises={catalog ?? []}
+        onSelect={selectChartExercise}
+        onClose={() => setPickerVisible(false)}
+        title="Ejercicio de la gráfica"
+      />
+    </SafeAreaView>
+  );
+}
+
+const createStyles = (c: ThemeColors) => {
+  const typography = makeTypography(c);
+  return StyleSheet.create({
+  // el área segura comparte el color superior del hero para un look full-bleed
+  safe: { flex: 1, backgroundColor: c.navy800 },
+  scroll: { backgroundColor: c.background },
+  content: { paddingBottom: TAB_BAR_SPACE },
+  hero: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  heroTop: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
+  heroEyebrow: { ...typography.eyebrow, color: 'rgba(255,255,255,0.65)' },
+  heroTitle: { fontSize: 30, fontWeight: '800', color: c.white, marginTop: 2 },
+  heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  heroBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tiles: { flexDirection: 'row', gap: spacing.sm },
+  body: { paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.md },
+  sectionTitle: { ...typography.subtitle, fontSize: 19, marginTop: 2, marginBottom: spacing.sm },
+  chartTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  readinessRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 6 },
+  readinessScore: { fontSize: 24, fontWeight: '800', color: c.textPrimary },
+  readinessWhite: { color: c.white },
+  readinessRec: { fontSize: 13, color: c.textMuted, marginTop: 6, lineHeight: 18 },
+  readinessRecHero: { color: 'rgba(255,255,255,0.85)' },
+  readinessEyebrowHero: { color: 'rgba(255,255,255,0.7)' },
+  mutedText: { ...typography.muted, marginBottom: spacing.sm },
+  recordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: c.ice,
+  },
+  recordBubble: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    backgroundColor: c.ice,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordName: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
+  recordMeta: { fontSize: 11, color: c.textMuted },
+  recordValue: { fontSize: 15, fontWeight: '700', color: c.primary },
+  checkinError: { color: c.primaryDark, fontSize: 13, fontWeight: '600', marginTop: 4 },
+});
+}
