@@ -272,6 +272,19 @@ export interface StrengthAnalyticsResponse {
   points: StrengthPoint[];
 }
 
+export type ReadinessLevel = 'OK' | 'CUIDADO' | 'DELOAD';
+
+export interface ReadinessResponse {
+  hasData: boolean;
+  score: number;
+  level: ReadinessLevel;
+  recommendation: string;
+  sleepAvg: number | null;
+  sorenessAvg: number | null;
+  fatigueAvg: number | null;
+  rpeAvg: number | null;
+}
+
 export type ExportDataset =
   | 'sets'
   | 'sessions'

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { Exercise } from '../api/types';
+import { normalize } from '../lib/text';
 import { radius, spacing, makeTypography, type ThemeColors } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -13,8 +14,8 @@ interface Props {
   title?: string;
 }
 
-/** Aplana padres + variantes en una sola lista buscable. */
-function flatten(exercises: Exercise[]): Exercise[] {
+/** Aplana padres + variantes en una sola lista buscable (sin duplicar). */
+export function flattenExercises(exercises: Exercise[]): Exercise[] {
   const out: Exercise[] = [];
   const seen = new Set<string>();
   for (const ex of exercises) {
@@ -36,12 +37,12 @@ export function ExercisePickerModal({ visible, exercises, onSelect, onClose, tit
   const { colors: c } = useTheme();
   const styles = useMemo(() => createStyles(c), [c]);
   const [query, setQuery] = useState('');
-  const all = useMemo(() => flatten(exercises), [exercises]);
+  const all = useMemo(() => flattenExercises(exercises), [exercises]);
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalize(query.trim());
     if (!q) return all;
     return all.filter(
-      (e) => e.name.toLowerCase().includes(q) || e.muscleGroup.toLowerCase().includes(q)
+      (e) => normalize(e.name).includes(q) || normalize(e.muscleGroup).includes(q)
     );
   }, [all, query]);
 
@@ -50,13 +51,23 @@ export function ExercisePickerModal({ visible, exercises, onSelect, onClose, tit
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={styles.sheet}>
         <Text style={styles.title}>{title}</Text>
-        <TextInput
-          style={styles.search}
-          placeholder="Buscar ejercicio…"
-          placeholderTextColor={c.textMuted}
-          value={query}
-          onChangeText={setQuery}
-        />
+        <View style={styles.search}>
+          <Ionicons name="search-outline" size={18} color={c.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar ejercicio…"
+            placeholderTextColor={c.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {query.length > 0 ? (
+            <Pressable onPress={() => setQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={c.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
@@ -102,15 +113,21 @@ const createStyles = (c: ThemeColors) => {
   },
   title: { ...typography.subtitle, fontSize: 20, marginBottom: spacing.sm },
   search: {
-    backgroundColor: c.ice,
-    borderRadius: radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: c.surface,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: c.surfaceBorder,
     paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
     paddingVertical: 10,
     fontSize: 15,
     color: c.textPrimary,
-    marginBottom: spacing.sm,
   },
   row: {
     flexDirection: 'row',

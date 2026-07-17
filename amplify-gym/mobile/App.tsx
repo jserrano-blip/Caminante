@@ -29,6 +29,7 @@ import { MealEditScreen } from './src/screens/MealEditScreen';
 import { MoreScreen } from './src/screens/MoreScreen';
 import { NutritionScreen } from './src/screens/NutritionScreen';
 import { ProfileSelectScreen } from './src/screens/ProfileSelectScreen';
+import { ProgressPhotosScreen } from './src/screens/ProgressPhotosScreen';
 import { RecoveryScreen } from './src/screens/RecoveryScreen';
 import { RoutineEditScreen } from './src/screens/RoutineEditScreen';
 import { RoutinesScreen } from './src/screens/RoutinesScreen';
@@ -74,6 +75,7 @@ function CuerpoNavigator() {
     <CuerpoStack.Navigator screenOptions={stackOptions}>
       <CuerpoStack.Screen name="Body" component={BodyScreen} />
       <CuerpoStack.Screen name="Recovery" component={RecoveryScreen} />
+      <CuerpoStack.Screen name="ProgressPhotos" component={ProgressPhotosScreen} />
     </CuerpoStack.Navigator>
   );
 }

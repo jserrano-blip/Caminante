@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ApiError } from '../api/client';
 import { addSet, deleteSet, finishSession, getSuggestion, listExercises } from '../api/endpoints';
 import type { Exercise, SuggestionResponse } from '../api/types';
 import { Button } from '../components/Button';
@@ -15,6 +17,7 @@ import { RestTimer } from '../components/RestTimer';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useApp } from '../context/AppContext';
 import { formatWeight, fromDisplayWeight, toDisplayWeight } from '../lib/formulas';
+import * as offlineQueue from '../lib/offlineQueue';
 import { generateWarmup } from '../lib/warmup';
 import { errorMessage } from '../lib/useLoad';
 import type { EntrenarStackParamList } from '../navigation/types';
@@ -32,6 +35,8 @@ interface LocalSet {
   rir: number | null;
   isWarmup: boolean;
   completed: boolean;
+  /** true: completada localmente pero sin sincronizar (en cola offline). */
+  pending: boolean;
 }
 
 interface ExerciseBlock {
@@ -63,6 +68,7 @@ function makeSet(partial?: Partial<LocalSet>): LocalSet {
     rir: null,
     isWarmup: false,
     completed: false,
+    pending: false,
     ...partial,
   };
 }
@@ -98,6 +104,42 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
   const [finishing, setFinishing] = useState(false);
   const startedAt = useRef(Date.now());
   const [, forceTick] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // reconciliación con la cola offline: si un tempId ya no está en cola,
+  // la serie quedó sincronizada → quitar la marca de pendiente
+  const reconcile = useCallback(
+    (list: offlineQueue.PendingSet[]) => {
+      const ids = new Set(list.filter((p) => p.sessionId === sessionId).map((p) => p.tempId));
+      setPendingCount(ids.size);
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.sets.some((s) => s.pending && !ids.has(s.key))
+            ? {
+                ...b,
+                sets: b.sets.map((s) =>
+                  s.pending && !ids.has(s.key) ? { ...s, pending: false } : s
+                ),
+              }
+            : b
+        )
+      );
+    },
+    [sessionId]
+  );
+
+  useEffect(() => {
+    const unsubscribe = offlineQueue.subscribe(reconcile);
+    void offlineQueue.getPending().then(reconcile);
+    return unsubscribe;
+  }, [reconcile]);
+
+  // reintenta la cola al recuperar el foco
+  useFocusEffect(
+    useCallback(() => {
+      void offlineQueue.flush();
+    }, [])
+  );
 
   // reloj de duración de la sesión
   useEffect(() => {
@@ -220,9 +262,11 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
     if (!block) return;
     setBanner(null);
     if (set.completed) {
-      // descompletar: borra del servidor
-      updateSet(blockIndex, set.key, { completed: false, serverId: null });
-      if (set.serverId) {
+      // descompletar: quita de la cola offline o borra del servidor
+      updateSet(blockIndex, set.key, { completed: false, serverId: null, pending: false });
+      if (set.pending) {
+        await offlineQueue.remove(set.key);
+      } else if (set.serverId) {
         try {
           await deleteSet(set.serverId);
         } catch (err) {
@@ -236,29 +280,55 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
       return;
     }
     const setNumber = block.sets.findIndex((s) => s.key === set.key) + 1;
+    const body = {
+      exerciseId: block.exercise.id,
+      setNumber,
+      reps: set.reps,
+      weightKg: set.weightKg,
+      unit,
+      rpe: block.effortMode === 'RPE' && set.rpe !== null ? set.rpe : undefined,
+      rir: block.effortMode === 'RIR' && set.rir !== null ? set.rir : undefined,
+      isWarmup: set.isWarmup,
+    };
     updateSet(blockIndex, set.key, { completed: true });
     try {
-      const saved = await addSet(sessionId, {
-        exerciseId: block.exercise.id,
-        setNumber,
-        reps: set.reps,
-        weightKg: set.weightKg,
-        unit,
-        rpe: block.effortMode === 'RPE' && set.rpe !== null ? set.rpe : undefined,
-        rir: block.effortMode === 'RIR' && set.rir !== null ? set.rir : undefined,
-        isWarmup: set.isWarmup,
-      });
+      const saved = await addSet(sessionId, body);
       updateSet(blockIndex, set.key, { serverId: saved.id });
       if (!set.isWarmup) {
         setTimer({ id: Date.now(), seconds: block.restSeconds });
       }
     } catch (err) {
-      updateSet(blockIndex, set.key, { completed: false });
-      setBanner(errorMessage(err));
+      const isNetwork = err instanceof TypeError || (err instanceof ApiError && err.isNetwork);
+      if (isNetwork) {
+        // sin red: encola y sigue el flujo normal
+        await offlineQueue.enqueue({ tempId: set.key, sessionId, body });
+        updateSet(blockIndex, set.key, { pending: true });
+        if (!set.isWarmup) {
+          setTimer({ id: Date.now(), seconds: block.restSeconds });
+        }
+      } else {
+        updateSet(blockIndex, set.key, { completed: false });
+        setBanner(errorMessage(err));
+      }
     }
   };
 
-  const finish = () => {
+  const finish = async () => {
+    // primero intenta sincronizar lo pendiente; si queda algo, no finaliza
+    setFinishing(true);
+    let remaining = 0;
+    try {
+      remaining = (await offlineQueue.flush()).filter((p) => p.sessionId === sessionId).length;
+    } finally {
+      setFinishing(false);
+    }
+    if (remaining > 0) {
+      Alert.alert(
+        'Series sin sincronizar',
+        `Tienes ${remaining} ${remaining === 1 ? 'serie' : 'series'} sin sincronizar. Reintenta cuando vuelva la señal.`
+      );
+      return;
+    }
     const completedCount = blocks.reduce(
       (sum, b) => sum + b.sets.filter((s) => s.completed).length,
       0
@@ -314,6 +384,16 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
       </View>
 
       {banner ? <ErrorBanner message={banner} /> : null}
+
+      {pendingCount > 0 ? (
+        <Pressable onPress={() => void offlineQueue.flush()} style={styles.pendingBanner}>
+          <Ionicons name="cloud-offline-outline" size={15} color={c.primary} />
+          <Text style={styles.pendingBannerText}>
+            {pendingCount} {pendingCount === 1 ? 'serie pendiente' : 'series pendientes'} de
+            sincronizar · Reintentar
+          </Text>
+        </Pressable>
+      ) : null}
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {blocks.map((block, blockIndex) => {
@@ -471,7 +551,13 @@ export function LiveWorkoutScreen({ navigation, route }: Props) {
                     )}
                     <Pressable onPress={() => toggleComplete(blockIndex, set)} hitSlop={6}>
                       <Ionicons
-                        name={set.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                        name={
+                          set.completed
+                            ? set.pending
+                              ? 'cloud-offline-outline'
+                              : 'checkmark-circle'
+                            : 'ellipse-outline'
+                        }
                         size={26}
                         color={set.completed ? c.primary : c.surfaceBorder}
                       />
@@ -525,6 +611,20 @@ const createStyles = (c: ThemeColors) => {
   title: { fontSize: 20, fontWeight: '700', color: c.textPrimary },
   subtitle: { fontSize: 12, color: c.textMuted, marginTop: 2 },
   content: { paddingHorizontal: spacing.md, gap: spacing.md, paddingBottom: TAB_BAR_SPACE },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    backgroundColor: c.ice,
+    borderWidth: 1,
+    borderColor: c.surfaceBorder,
+    borderRadius: radius.sm,
+  },
+  pendingBannerText: { fontSize: 12, fontWeight: '600', color: c.primary, flex: 1 },
   block: { gap: spacing.sm },
   blockHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   exerciseName: { fontSize: 16, fontWeight: '700', color: c.textPrimary },

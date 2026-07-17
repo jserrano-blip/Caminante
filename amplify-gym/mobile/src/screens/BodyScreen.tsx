@@ -136,6 +136,25 @@ export function BodyScreen({ navigation }: Props) {
             ) : null}
           </Card>
 
+          <Pressable onPress={() => navigation.navigate('ProgressPhotos')}>
+            {({ pressed }) => (
+              <Card style={pressed ? { opacity: 0.8 } : undefined}>
+                <View style={styles.photosLinkRow}>
+                  <View style={styles.photosLinkBubble}>
+                    <Ionicons name="images-outline" size={20} color={c.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.photosLinkTitle}>Fotos de progreso</Text>
+                    <Text style={styles.photosLinkSub}>
+                      Documenta tu evolución y compara lado a lado.
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+                </View>
+              </Card>
+            )}
+          </Pressable>
+
           <Card>
             <Text style={styles.sectionTitle}>Fuerza relativa</Text>
             <Text style={styles.explainer}>
@@ -203,6 +222,17 @@ const createStyles = (c: ThemeColors) => {
   fieldLabel: { fontSize: 11, color: c.textMuted, marginBottom: 4 },
   formError: { color: c.primaryDark, fontSize: 13, fontWeight: '600' },
   explainer: { fontSize: 12, color: c.textMuted, lineHeight: 18 },
+  photosLinkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  photosLinkBubble: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.ice,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photosLinkTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary },
+  photosLinkSub: { fontSize: 12, color: c.textMuted, marginTop: 1 },
   tableHeader: {
     flexDirection: 'row',
     borderBottomWidth: 1,

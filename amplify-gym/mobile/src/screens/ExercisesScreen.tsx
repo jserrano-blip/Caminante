@@ -1,19 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useCallback, useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { listExercises } from '../api/endpoints';
 import type { Exercise } from '../api/types';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { flattenExercises } from '../components/ExercisePickerModal';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { useApp } from '../context/AppContext';
+import { normalize } from '../lib/text';
 import { useLoad } from '../lib/useLoad';
 import type { RutinasStackParamList } from '../navigation/types';
-import { TAB_BAR_SPACE, spacing, makeTypography, type ThemeColors } from '../theme';
+import { TAB_BAR_SPACE, radius, spacing, makeTypography, type ThemeColors } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RutinasStackParamList, 'Exercises'>;
@@ -26,6 +28,7 @@ export function ExercisesScreen({ navigation }: Props) {
   const { user } = useApp();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => listExercises(userId), [userId]);
+  const [query, setQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -60,6 +63,15 @@ export function ExercisesScreen({ navigation }: Props) {
     }));
   }, [data]);
 
+  // búsqueda: lista plana de coincidencias (padres + variantes sin duplicar)
+  const results = useMemo(() => {
+    const q = normalize(query.trim());
+    if (!q) return null;
+    return flattenExercises(data ?? []).filter(
+      (e) => normalize(e.name).includes(q) || normalize(e.muscleGroup).includes(q)
+    );
+  }, [data, query]);
+
   const renderExercise = (ex: Exercise, isVariant = false) => (
     <Pressable
       key={ex.id}
@@ -89,19 +101,48 @@ export function ExercisesScreen({ navigation }: Props) {
         {loading ? <ActivityIndicator color={c.primary} style={{ margin: spacing.lg }} /> : null}
 
         <View style={styles.body}>
+          <View style={styles.searchCard}>
+            <Ionicons name="search-outline" size={18} color={c.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar ejercicio…"
+              placeholderTextColor={c.textMuted}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {query.length > 0 ? (
+              <Pressable onPress={() => setQuery('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={c.textMuted} />
+              </Pressable>
+            ) : null}
+          </View>
+
           <Button title="＋ Crear ejercicio propio" onPress={() => navigation.navigate('ExerciseEdit', {})} />
 
-          {grouped.map(({ group, exercises }) => (
-            <Card key={group}>
-              <Text style={styles.groupTitle}>{group}</Text>
-              {exercises.map((ex) => (
-                <View key={ex.id}>
-                  {renderExercise(ex)}
-                  {(ex.variants ?? []).map((v) => renderExercise(v, true))}
-                </View>
-              ))}
+          {results ? (
+            <Card>
+              <Text style={styles.groupTitle}>
+                {results.length === 0
+                  ? 'Sin resultados'
+                  : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}
+              </Text>
+              {results.map((ex) => renderExercise(ex, !!ex.variantOfId))}
             </Card>
-          ))}
+          ) : (
+            grouped.map(({ group, exercises }) => (
+              <Card key={group}>
+                <Text style={styles.groupTitle}>{group}</Text>
+                {exercises.map((ex) => (
+                  <View key={ex.id}>
+                    {renderExercise(ex)}
+                    {(ex.variants ?? []).map((v) => renderExercise(v, true))}
+                  </View>
+                ))}
+              </Card>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -114,6 +155,22 @@ const createStyles = (c: ThemeColors) => {
   safe: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: TAB_BAR_SPACE },
   body: { paddingHorizontal: spacing.md, gap: spacing.md },
+  searchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: c.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: c.surfaceBorder,
+    paddingHorizontal: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: c.textPrimary,
+  },
   groupTitle: { ...typography.subtitle, fontSize: 14, color: c.accent, marginBottom: 4 },
   row: {
     flexDirection: 'row',

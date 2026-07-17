@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { createRecovery, getDashboard, getStrengthAnalytics } from '../api/endpoints';
-import type { DashboardResponse } from '../api/types';
+import { createRecovery, getDashboard, getReadiness, getStrengthAnalytics, listExercises } from '../api/endpoints';
+import type { DashboardResponse, Exercise } from '../api/types';
+import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { BarChart } from '../components/BarChart';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -61,6 +63,9 @@ function weeklyStreak(weeks: { weekStart: string; sessions: number }[]): number 
   return streak;
 }
 
+const CHART_EX_ID_KEY = 'amplify.chartExerciseId';
+const CHART_EX_NAME_KEY = 'amplify.chartExerciseName';
+
 const RECORD_LABEL: Record<string, string> = {
   WEIGHT: 'Peso máximo',
   E1RM: '1RM estimado',
@@ -97,12 +102,51 @@ export function DashboardScreen() {
   const isFocused = useIsFocused();
   const userId = user?.id ?? '';
   const { data, loading, error, reload } = useLoad(() => getDashboard(userId), [userId]);
+  const readiness = useLoad(() => getReadiness(userId), [userId]);
 
   const favorite = useMemo(() => (data ? favoriteExerciseId(data) : null), [data]);
+
+  // ejercicio elegido para la gráfica de fuerza (persistido); default: favorito
+  const [chartExercise, setChartExercise] = useState<{ id: string; name: string } | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [catalog, setCatalog] = useState<Exercise[] | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [id, name] = await Promise.all([
+          AsyncStorage.getItem(CHART_EX_ID_KEY),
+          AsyncStorage.getItem(CHART_EX_NAME_KEY),
+        ]);
+        if (id && name) setChartExercise({ id, name });
+      } catch {
+        // se queda el favorito
+      }
+    })();
+  }, []);
+
+  const chartTarget = chartExercise ?? favorite;
   const strength = useLoad(
-    () => (favorite ? getStrengthAnalytics(userId, favorite.id) : Promise.resolve(null)),
-    [userId, favorite?.id]
+    () => (chartTarget ? getStrengthAnalytics(userId, chartTarget.id) : Promise.resolve(null)),
+    [userId, chartTarget?.id]
   );
+
+  const openChartPicker = () => {
+    setPickerVisible(true);
+    if (catalog === null) {
+      // catálogo lazy: se carga la primera vez que se abre el selector
+      listExercises(userId)
+        .then(setCatalog)
+        .catch(() => setCatalog([]));
+    }
+  };
+
+  const selectChartExercise = (exercise: Exercise) => {
+    setPickerVisible(false);
+    setChartExercise({ id: exercise.id, name: exercise.name });
+    void AsyncStorage.setItem(CHART_EX_ID_KEY, exercise.id);
+    void AsyncStorage.setItem(CHART_EX_NAME_KEY, exercise.name);
+  };
 
   // check-in rápido de recuperación
   const [sleep, setSleep] = useState(7.5);
@@ -181,6 +225,45 @@ export function DashboardScreen() {
         </LinearGradient>
 
         <View style={styles.body}>
+          {readiness.data && readiness.data.hasData && readiness.data.level !== 'OK' ? (
+            <Card
+              tinted={readiness.data.level === 'CUIDADO'}
+              variant={readiness.data.level === 'DELOAD' ? 'hero' : 'default'}
+            >
+              <Text
+                style={[
+                  typography.eyebrow,
+                  readiness.data.level === 'DELOAD' && styles.readinessEyebrowHero,
+                ]}
+              >
+                RECUPERACIÓN INTELIGENTE
+              </Text>
+              <View style={styles.readinessRow}>
+                <Ionicons
+                  name="pulse-outline"
+                  size={24}
+                  color={readiness.data.level === 'DELOAD' ? c.white : c.primary}
+                />
+                <Text
+                  style={[
+                    styles.readinessScore,
+                    readiness.data.level === 'DELOAD' && styles.readinessWhite,
+                  ]}
+                >
+                  Readiness {readiness.data.score}/100
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.readinessRec,
+                  readiness.data.level === 'DELOAD' && styles.readinessRecHero,
+                ]}
+              >
+                {readiness.data.recommendation}
+              </Text>
+            </Card>
+          ) : null}
+
           {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
           {loading ? <ActivityIndicator color={c.primary} style={{ marginVertical: spacing.xl }} /> : null}
 
@@ -201,10 +284,13 @@ export function DashboardScreen() {
                 )}
               </Card>
 
-              {favorite ? (
+              {chartTarget ? (
                 <Card>
                   <Text style={typography.eyebrow}>FUERZA</Text>
-                  <Text style={styles.sectionTitle}>e1RM · {favorite.name}</Text>
+                  <Pressable onPress={openChartPicker} style={styles.chartTitleRow} hitSlop={4}>
+                    <Text style={styles.sectionTitle}>e1RM · {chartTarget.name}</Text>
+                    <Ionicons name="chevron-down" size={16} color={c.textMuted} />
+                  </Pressable>
                   {strength.data && strength.data.points.length > 0 ? (
                     <LineChart
                       data={strength.data.points.map((p) => ({
@@ -262,6 +348,14 @@ export function DashboardScreen() {
           ) : null}
         </View>
       </ScrollView>
+
+      <ExercisePickerModal
+        visible={pickerVisible}
+        exercises={catalog ?? []}
+        onSelect={selectChartExercise}
+        onClose={() => setPickerVisible(false)}
+        title="Ejercicio de la gráfica"
+      />
     </SafeAreaView>
   );
 }
@@ -297,6 +391,13 @@ const createStyles = (c: ThemeColors) => {
   tiles: { flexDirection: 'row', gap: spacing.sm },
   body: { paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.md },
   sectionTitle: { ...typography.subtitle, fontSize: 19, marginTop: 2, marginBottom: spacing.sm },
+  chartTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  readinessRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 6 },
+  readinessScore: { fontSize: 24, fontWeight: '800', color: c.textPrimary },
+  readinessWhite: { color: c.white },
+  readinessRec: { fontSize: 13, color: c.textMuted, marginTop: 6, lineHeight: 18 },
+  readinessRecHero: { color: 'rgba(255,255,255,0.85)' },
+  readinessEyebrowHero: { color: 'rgba(255,255,255,0.7)' },
   mutedText: { ...typography.muted, marginBottom: spacing.sm },
   recordRow: {
     flexDirection: 'row',

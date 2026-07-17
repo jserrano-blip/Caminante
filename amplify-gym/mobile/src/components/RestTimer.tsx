@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { cancelRestNotification, scheduleRestEndNotification } from '../lib/restNotifications';
 import { radius, shadow, spacing, type ThemeColors } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -24,11 +25,35 @@ export function RestTimer({ seconds, onDone, onDismiss }: Props) {
   const styles = useMemo(() => createStyles(c), [c]);
   const [remaining, setRemaining] = useState(seconds);
   const doneRef = useRef(false);
+  const notifId = useRef<string | null>(null);
 
   useEffect(() => {
     setRemaining(seconds);
     doneRef.current = false;
   }, [seconds]);
+
+  // notificación local "Descanso terminado": programa al montar, cancela al cerrar
+  useEffect(() => {
+    void scheduleRestEndNotification(seconds).then((id) => {
+      notifId.current = id;
+    });
+    return () => {
+      void cancelRestNotification(notifId.current);
+      notifId.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const adjust = (delta: number) => {
+    const next = Math.max(0, remaining + delta);
+    setRemaining(next);
+    const prev = notifId.current;
+    notifId.current = null;
+    void (async () => {
+      await cancelRestNotification(prev);
+      if (next > 0) notifId.current = await scheduleRestEndNotification(next);
+    })();
+  };
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -56,14 +81,14 @@ export function RestTimer({ seconds, onDone, onDismiss }: Props) {
       end={{ x: 1, y: 1 }}
       style={styles.container}
     >
-      <Pressable onPress={() => setRemaining((r) => Math.max(0, r - 30))} hitSlop={8} style={styles.adjust}>
+      <Pressable onPress={() => adjust(-30)} hitSlop={8} style={styles.adjust}>
         <Text style={styles.adjustText}>−30s</Text>
       </Pressable>
       <View style={styles.center}>
         <Ionicons name="timer-outline" size={20} color={c.sky} />
         <Text style={styles.time}>{finished ? '¡Listo!' : fmt(remaining)}</Text>
       </View>
-      <Pressable onPress={() => setRemaining((r) => r + 30)} hitSlop={8} style={styles.adjust}>
+      <Pressable onPress={() => adjust(30)} hitSlop={8} style={styles.adjust}>
         <Text style={styles.adjustText}>+30s</Text>
       </Pressable>
       <Pressable onPress={onDismiss} hitSlop={8} style={styles.close}>

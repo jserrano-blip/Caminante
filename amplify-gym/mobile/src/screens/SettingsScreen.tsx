@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { testConnection } from '../api/client';
+import { getApiKey, setApiKey, testApiKey, testConnection } from '../api/client';
 import { updateUser } from '../api/endpoints';
 import type { ExportDataset, Sex, WeightUnit } from '../api/types';
 import { Button } from '../components/Button';
@@ -38,8 +38,13 @@ export function SettingsScreen() {
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
 
   const [urlInput, setUrlInput] = useState(baseUrl);
+  const [apiKeyInput, setApiKeyInput] = useState('');
   const [testing, setTesting] = useState(false);
   const [connMsg, setConnMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getApiKey().then((key) => setApiKeyInput(key ?? ''));
+  }, []);
 
   const [exporting, setExporting] = useState<ExportDataset | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,8 +85,20 @@ export function SettingsScreen() {
     setConnMsg(null);
     try {
       await setBaseUrl(urlInput);
+      await setApiKey(apiKeyInput);
+      // Paso 1: conectividad básica (GET /health, sin clave)
       const ok = await testConnection(urlInput);
-      setConnMsg(ok ? 'Conexión exitosa con el servidor ✓' : 'No se pudo conectar — revisa la URL y que el servidor esté corriendo.');
+      if (!ok) {
+        setConnMsg('No se pudo conectar — revisa la URL y que el servidor esté corriendo.');
+        return;
+      }
+      // Paso 2: autenticación (GET /users con x-api-key)
+      const auth = await testApiKey(urlInput, apiKeyInput.trim() || null);
+      if (auth === 'unauthorized') {
+        setConnMsg('Conecta, pero la clave de API es incorrecta');
+      } else {
+        setConnMsg('Conexión exitosa con el servidor ✓');
+      }
     } finally {
       setTesting(false);
     }
@@ -91,7 +108,9 @@ export function SettingsScreen() {
     if (!user) return;
     setExporting(dataset);
     setError(null);
-    const url = `${baseUrl.replace(/\/+$/, '')}/export.csv?userId=${user.id}&dataset=${dataset}`;
+    const key = apiKeyInput.trim();
+    const keyParam = key ? `&key=${encodeURIComponent(key)}` : '';
+    const url = `${baseUrl.replace(/\/+$/, '')}/export.csv?userId=${user.id}&dataset=${dataset}${keyParam}`;
     try {
       const destination = new File(Paths.cache, `amplify-${dataset}-${Date.now()}.csv`);
       const file = await File.downloadFileAsync(url, destination, { idempotent: true });
@@ -177,6 +196,17 @@ export function SettingsScreen() {
               autoCorrect={false}
               keyboardType="url"
               placeholder="http://localhost:4000/api"
+              placeholderTextColor={c.textMuted}
+            />
+            <Text style={styles.fieldLabel}>Clave de API (opcional)</Text>
+            <TextInput
+              style={styles.input}
+              value={apiKeyInput}
+              onChangeText={setApiKeyInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              placeholder="Clave de API (opcional)"
               placeholderTextColor={c.textMuted}
             />
             {connMsg ? <Text style={styles.msg}>{connMsg}</Text> : null}

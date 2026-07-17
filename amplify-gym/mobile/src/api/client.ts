@@ -2,8 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const DEFAULT_BASE_URL = 'http://localhost:4000/api';
 const BASE_URL_KEY = 'amplify.baseUrl';
+const API_KEY_KEY = 'amplify.apiKey';
 
 let cachedBaseUrl: string | null = null;
+let cachedApiKey: string | null = null;
+let apiKeyLoaded = false;
 
 export async function getBaseUrl(): Promise<string> {
   if (cachedBaseUrl) return cachedBaseUrl;
@@ -20,6 +23,27 @@ export async function setBaseUrl(url: string): Promise<void> {
   const clean = url.trim().replace(/\/+$/, '');
   cachedBaseUrl = clean || DEFAULT_BASE_URL;
   await AsyncStorage.setItem(BASE_URL_KEY, cachedBaseUrl);
+}
+
+/** Clave de API opcional (header x-api-key). null = sin clave. */
+export async function getApiKey(): Promise<string | null> {
+  if (apiKeyLoaded) return cachedApiKey;
+  try {
+    const stored = await AsyncStorage.getItem(API_KEY_KEY);
+    cachedApiKey = stored && stored.trim() ? stored.trim() : null;
+  } catch {
+    cachedApiKey = null;
+  }
+  apiKeyLoaded = true;
+  return cachedApiKey;
+}
+
+export async function setApiKey(key: string): Promise<void> {
+  const clean = key.trim();
+  cachedApiKey = clean || null;
+  apiKeyLoaded = true;
+  if (cachedApiKey) await AsyncStorage.setItem(API_KEY_KEY, cachedApiKey);
+  else await AsyncStorage.removeItem(API_KEY_KEY);
 }
 
 export class ApiError extends Error {
@@ -41,13 +65,18 @@ export const NETWORK_ERROR_MESSAGE =
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
-  const baseUrl = await getBaseUrl();
+  const [baseUrl, apiKey] = await Promise.all([getBaseUrl(), getApiKey()]);
   const url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (apiKey) headers['x-api-key'] = apiKey;
   let res: Response;
   try {
     res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
@@ -93,4 +122,25 @@ export async function testConnection(baseUrl: string): Promise<boolean> {
     }
   }
   return false;
+}
+
+/**
+ * Prueba la clave de API: GET <baseUrl>/users con x-api-key.
+ * 'ok' = autorizado, 'unauthorized' = 401 (clave incorrecta), 'error' = otro fallo.
+ */
+export async function testApiKey(
+  baseUrl: string,
+  apiKey: string | null
+): Promise<'ok' | 'unauthorized' | 'error'> {
+  const clean = baseUrl.trim().replace(/\/+$/, '');
+  try {
+    const res = await fetch(`${clean}/users`, {
+      method: 'GET',
+      headers: apiKey ? { 'x-api-key': apiKey } : undefined,
+    });
+    if (res.status === 401) return 'unauthorized';
+    return res.ok ? 'ok' : 'error';
+  } catch {
+    return 'error';
+  }
 }

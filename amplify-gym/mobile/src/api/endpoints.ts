@@ -11,6 +11,7 @@ import type {
   MealPrep,
   MealPrepInput,
   PersonalRecord,
+  ReadinessResponse,
   RecoveryLog,
   RelativeStrengthResponse,
   Routine,
@@ -143,3 +144,7 @@ export const getDashboard = (userId: string) =>
   get<DashboardResponse>(`/analytics/dashboard?userId=${userId}`);
 export const getStrengthAnalytics = (userId: string, exerciseId: string) =>
   get<StrengthAnalyticsResponse>(`/analytics/strength?userId=${userId}&exerciseId=${exerciseId}`);
+
+// ── Recuperación inteligente (deload) ───────────────────────────────────────
+export const getReadiness = (userId: string) =>
+  get<ReadinessResponse>(`/readiness?userId=${userId}`);

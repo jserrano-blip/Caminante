@@ -34,6 +34,7 @@ export type RutinasStackParamList = {
 export type CuerpoStackParamList = {
   Body: undefined;
   Recovery: undefined;
+  ProgressPhotos: undefined;
 };
 
 export type MasStackParamList = {
